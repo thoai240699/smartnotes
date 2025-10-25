@@ -1,0 +1,161 @@
+// LoginScreen.js - Màn hình đăng nhập
+// TODO: Person A - Implement login UI and logic
+
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginAsync } from '../redux/userSlice';
+import {
+  Colors,
+  Spacing,
+  FontSizes,
+  BorderRadius,
+} from '../styles/globalStyles';
+
+const LoginScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.user);
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    try {
+      await dispatch(loginAsync({ email, password })).unwrap();
+      // Navigate back to Main after successful login
+      navigation.goBack();
+    } catch (err) {
+      Alert.alert('Lỗi đăng nhập', err);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>SmartNotes+</Text>
+      <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+
+      <TextInput
+        style={styles.input}
+        placeholder="Mật khẩu"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" />
+        ) : (
+          <Text style={styles.buttonText}>Đăng nhập</Text>
+        )}
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.linkText}>
+          Chưa có tài khoản? <Text style={styles.linkTextBold}>Đăng ký</Text>
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.skipButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.skipText}>Quay lại</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: Spacing.xl,
+    justifyContent: 'center',
+    backgroundColor: Colors.light.background,
+  },
+  title: {
+    fontSize: FontSizes.xxl,
+    fontWeight: 'bold',
+    color: Colors.primary,
+    textAlign: 'center',
+    marginBottom: Spacing.sm,
+  },
+  subtitle: {
+    fontSize: FontSizes.md,
+    color: Colors.light.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+  },
+  input: {
+    backgroundColor: '#FFFFFF',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    fontSize: FontSizes.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  button: {
+    backgroundColor: Colors.primary,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    marginTop: Spacing.md,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: FontSizes.lg,
+    fontWeight: '600',
+  },
+  linkText: {
+    textAlign: 'center',
+    marginTop: Spacing.lg,
+    color: Colors.light.textSecondary,
+    fontSize: FontSizes.md,
+  },
+  linkTextBold: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  skipButton: {
+    marginTop: Spacing.xl,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+    alignItems: 'center',
+  },
+  skipText: {
+    color: Colors.primary,
+    fontSize: FontSizes.md,
+    fontWeight: '600',
+  },
+});
+
+export default LoginScreen;
