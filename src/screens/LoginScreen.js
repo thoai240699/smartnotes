@@ -34,11 +34,13 @@ const LoginScreen = ({ navigation }) => {
     }
 
     try {
+      // Gọi action để đăng nhập
       await dispatch(loginAsync({ email, password })).unwrap();
-      // Navigate back to Main after successful login
-      navigation.goBack();
+      // Đăng nhập thành công, quay lại màn hình trước đó
+      navigation.replace('Main');
     } catch (err) {
-      Alert.alert('Lỗi đăng nhập', err);
+      const errorMessage = typeof err === 'string' ? err : 'Đăng nhập thất bại. Vui lòng thử lại.';
+      Alert.alert('Lỗi đăng nhập', errorMessage);
     }
   };
 

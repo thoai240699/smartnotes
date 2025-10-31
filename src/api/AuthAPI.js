@@ -19,12 +19,13 @@ export const loginUser = async (email, password) => {
     );
 
     if (!user) {
-      throw new Error('Email hoặc mật khẩu không đúng');
+      return { success: false, error: 'Email hoặc mật khẩu không đúng.' };
     }
 
-    return user;
+    return {success: true, user}
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi đăng nhập:', error);
+    return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
   }
 };
 
@@ -42,7 +43,7 @@ export const registerUser = async (userData) => {
     const existingUser = users.find((u) => u.email === userData.email);
 
     if (existingUser) {
-      throw new Error('Email đã được sử dụng');
+      return { success: false, error: 'Email đã được đăng ký.' };
     }
 
     // Tạo user mới
@@ -54,9 +55,10 @@ export const registerUser = async (userData) => {
       createdAt: new Date().toISOString(),
     });
 
-    return newUser.data;
+    return { success: true, user: newUser.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi đăng ký:', error);
+    return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
   }
 };
 
@@ -68,9 +70,10 @@ export const registerUser = async (userData) => {
 export const getUserById = async (userId) => {
   try {
     const response = await axiosInstance.get(`/users/${userId}`);
-    return response.data;
+    return { success: true, user: response.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi lấy thông tin người dùng:', error);
+    return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
   }
 };
 
@@ -83,8 +86,31 @@ export const getUserById = async (userId) => {
 export const updateUser = async (userId, updateData) => {
   try {
     const response = await axiosInstance.put(`/users/${userId}`, updateData);
-    return response.data;
+    return { success: true, user: response.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi cập nhật hồ sơ người dùng:', error);
+    return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
+  }
+};
+
+
+/**
+ * @description Thay đổi mật khẩu người dùng.
+ * @param {object} payload - { id, oldPassword, newPassword }
+ */
+
+export const updatePassword = async ({ id, oldPassword, newPassword }) => {
+  try{
+      const response = await axiosInstance.get('/users/${id}');
+      const user = response.data;
+      if(user.password !== oldPassword){
+          return { success: false, error: 'Mật khẩu cũ không đúng.' };
+      }
+
+      const updatedUser = await axiosInstance.put(`/users/${id}`, { password: newPassword });
+      return { success: true, user: updatedUser.data };
+  } catch (error) {
+    console.error('Lỗi khi đổi mật khẩu:', error);
+    return { success: false, error: 'Lỗi khi đổi mật khẩu' };
   }
 };

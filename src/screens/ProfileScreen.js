@@ -22,7 +22,8 @@ import {
 
 const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { currentUser, isAuthenticated } = useSelector((state) => state.user);
+  const { user, isLoggedIn } = useSelector((state) => state.user);
+  console.log("ProfileScreen: IsLoggedIn=", isLoggedIn, "User:", user);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
@@ -30,10 +31,8 @@ const ProfileScreen = ({ navigation }) => {
       {
         text: 'Đăng xuất',
         style: 'destructive',
-        onPress: async () => {
-          await AsyncStorage.clear();
+        onPress: () => {
           dispatch(logout());
-          // Stay on the same screen, just switch to guest mode
         },
       },
     ]);
@@ -44,7 +43,7 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   // Guest Mode - Not logged in
-  if (!isAuthenticated || !currentUser) {
+  if (!isLoggedIn || !user) {
     return (
       <View style={styles.container}>
         <View style={styles.profileCard}>
@@ -94,26 +93,26 @@ const ProfileScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.profileCard}>
-        {currentUser?.avatar ? (
-          <Image source={{ uri: currentUser.avatar }} style={styles.avatar} />
+        {user?.avatar ? (
+          <Image source={{ uri: user.avatar }} style={styles.avatar} />
         ) : (
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>
-              {currentUser?.fullname?.charAt(0)?.toUpperCase() || 'U'}
+              {user?.fullname?.charAt(0)?.toUpperCase() || 'U'}
             </Text>
           </View>
         )}
 
-        <Text style={styles.name}>{currentUser?.fullname || 'User'}</Text>
-        <Text style={styles.email}>{currentUser?.email || ''}</Text>
+        <Text style={styles.name}>{user?.fullname || 'User'}</Text>
+        <Text style={styles.email}>{user?.email || ''}</Text>
       </View>
 
       <View style={styles.menuContainer}>
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('EditProfile')}>
           <Text style={styles.menuText}>📝 Chỉnh sửa hồ sơ</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
+        <TouchableOpacity style={styles.menuItem} >
           <Text style={styles.menuText}>🔔 Thông báo</Text>
         </TouchableOpacity>
 
