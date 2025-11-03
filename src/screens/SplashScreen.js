@@ -1,24 +1,79 @@
 // SplashScreen.js - Màn hình khởi động
 // TODO: Person A - Create splash screen with logo animation
 
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import React, { useEffect, useRef } from 'react'; 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Animated,
+} from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { loadSessionAsync } from '../redux/userSlice';
 import { Colors, FontSizes } from '../styles/globalStyles';
 
 const SplashScreen = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const loading = useSelector((state) => state.user.loading);
+  const isLoggedIn = useSelector((state) => state.user.isLoggedIn);
+
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const translateYAnim = useRef(new Animated.Value(50)).current;
+
+
   useEffect(() => {
-    // TODO: Check authentication status
-    // TODO: Navigate to Login or Home after 2 seconds
-    setTimeout(() => {
-      // navigation.replace('Login');
-    }, 2000);
-  }, []);
+    
+    Animated.parallel([
+      // Fade In
+      Animated.timing(fadeAnim, {
+        toValue: 1, 
+        duration: 1000, 
+        useNativeDriver: true,
+      }),
+      // Slide Up
+      Animated.timing(translateYAnim, {
+        toValue: 0, 
+        duration: 1200, 
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, translateYAnim]);
+
+
+  useEffect(() => {
+    dispatch(loadSessionAsync())
+      .unwrap()
+      .then(() => {})
+      .catch(() => {});
+  }, [dispatch]);
+
+  useEffect(() => {
+    const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+
+    if (!loading) {
+      minDelay.then(() => {
+        navigation.replace('MainApp');
+      });
+    }
+  }, [loading, isLoggedIn, navigation]);
+
 
   return (
     <View style={styles.container}>
-      <Text style={styles.logo}>📝</Text>
-      <Text style={styles.title}>SmartNotes+</Text>
-      <Text style={styles.subtitle}>Ghi chú thông minh</Text>
+      <Animated.View
+        style={{
+          opacity: fadeAnim, 
+          transform: [{ translateY: translateYAnim }], 
+          alignItems: 'center',
+          marginBottom: 40, 
+        }}
+      >
+        <Text style={styles.logo}>📝</Text>
+        <Text style={styles.title}>SmartNotes+</Text>
+        <Text style={styles.subtitle}>Ghi chú thông minh</Text>
+      </Animated.View>
+
       <ActivityIndicator
         size="large"
         color={Colors.primary}
@@ -51,7 +106,8 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   loader: {
-    marginTop: 40,
+    position: 'absolute',
+    bottom: 50,
   },
 });
 

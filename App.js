@@ -1,9 +1,10 @@
 // App.js - Main Application Entry Point
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+//import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Provider, useSelector } from 'react-redux';
+import { Provider, useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
@@ -14,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
+import EditProfileScreen from './src/screens/EditProfileScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import AddNoteScreen from './src/screens/AddNoteScreen';
 import EditNoteScreen from './src/screens/EditNoteScreen';
@@ -25,8 +27,9 @@ import OfflineSyncScreen from './src/screens/OfflineSyncScreen';
 
 import { Colors } from './src/styles/globalStyles';
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const RootStack = createNativeStackNavigator();
 
 // Bottom Tab Navigator
 function MainTabs() {
@@ -142,6 +145,13 @@ function AppStack() {
         component={OfflineSyncScreen}
         options={{ title: 'Đồng bộ dữ liệu' }}
       />
+
+      <Stack.Screen
+        name="EditProfile" 
+        component={EditProfileScreen}
+        options={{ title: 'Chỉnh sửa hồ sơ' }}
+      />
+
       <Stack.Screen
         name="Login"
         component={LoginScreen}
@@ -158,7 +168,8 @@ function AppStack() {
 
 // Root Navigator - Always start with Main (no login required)
 function RootNavigator() {
-  const [isLoading, setIsLoading] = useState(true);
+  //const isSplashLoading = useSelector((state) => state.app.isLoading);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     // Initialize app
@@ -171,31 +182,38 @@ function RootNavigator() {
         configureNotificationHandler();
 
         // Check saved authentication from AsyncStorage
-        const savedUser = await AsyncStorage.getItem('currentUser');
-        if (savedUser) {
-          // TODO: dispatch(setUser(JSON.parse(savedUser)));
-          console.log('Found saved user:', savedUser);
-        }
+      //   const savedUser = await AsyncStorage.getItem('currentUser');
+      //   if (savedUser) {
+      //     // TODO: dispatch(setUser(JSON.parse(savedUser)));
+      //     console.log('Found saved user:', savedUser);
+      //   }
 
-        setIsLoading(false);
+      //   setIsLoading(false);
       } catch (error) {
-        console.log('Error initializing app:', error);
-        setIsLoading(false);
+         console.log('Error initializing app:', error);
+        // setIsLoading(false);
       }
     };
 
     initApp();
-  }, []);
+  }, [dispatch]);
 
-  if (isLoading) {
-    return <SplashScreen />;
-  }
+  // if (isLoading) {
+  //   return <SplashScreen />;
+  // }
 
-  // Always start with AppStack (Main tabs)
+  // Always start with AppStack (Main tabs), now alway start with SplashScreen
   // Login/Register accessible from Profile tab
   return (
     <NavigationContainer>
-      <AppStack />
+      <RootStack.Navigator
+        screenOptions={{ headerShown: false }}
+      >
+        
+        <RootStack.Screen name="Splash" component={SplashScreen} /> 
+        <RootStack.Screen name="MainApp" component={AppStack} />        
+            
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 }
