@@ -160,6 +160,8 @@ npm test NotificationScreen
 
 ---
 
+## 🚀 Quick Start (5 phút)
+
 ### 1️⃣ Cài đặt Dependencies
 
 ```bash
@@ -175,6 +177,8 @@ npm start
 expo start
 ```
 
+**⚠️ Sẽ thấy notification warnings - BÌNH THƯỜNG!** ([Xem troubleshooting](#-expo-go-notification-warnings---bình-thường))
+
 ### 3️⃣ Xem App
 
 - **Điện thoại**: Mở **Expo Go** app → Scan QR code
@@ -182,11 +186,27 @@ expo start
 - **iOS Simulator**: Press `i` (chỉ macOS)
 - **Web**: Press `w`
 
-### 4️⃣ Bắt đầu sử dụng
+### 4️⃣ Test Features (Expo Go)
+
+**✅ Có thể test ngay:**
+
+- ✅ Tạo/sửa/xóa notes
+- ✅ Camera/Photos
+- ✅ Maps/Location
+- ✅ Search/Filter
+- ✅ Notification UI (xem list, hủy)
+- ✅ Permission request
+
+**⚠️ Limited trong Expo Go:**
+
+- ⚠️ Scheduling notifications
+- ❌ Notification tap navigation
+
+### 5️⃣ Bắt đầu sử dụng
 
 - ✅ App khởi động tại **Home screen** (không cần login!)
 - ✅ Click nút **+** để tạo note đầu tiên
-- ✅ Tất cả features hoạt động trong **Guest Mode**
+- ✅ Test notification UI tại **Notifications tab**
 
 ---
 
@@ -681,22 +701,47 @@ npm test
 
 ## 🐛 Troubleshooting
 
-### ❌ "Unable to resolve module..."
+### ❌ Expo Go Notification Warnings - BÌNH THƯỜNG!
 
-```bash
-npm install
-expo start -c
+Khi chạy `npm start` (Expo Go), bạn sẽ thấy warnings sau:
+
+```
+ERROR  expo-notifications: Android Push notifications functionality
+       was removed from Expo Go with SDK 53.
+       Use a development build instead.
+
+WARN   `expo-notifications` functionality is not fully supported in Expo Go
+
+LOG    ⚠️ Notifications have limited support in Expo Go.
+       Use development build for full functionality.
 ```
 
-### ❌ "Port 19000 already in use"
+**👉 Đây KHÔNG PHẢI lỗi!** App vẫn hoạt động bình thường.
 
-```bash
-expo start --port 19001
-```
+| Feature                          | Expo Go      | Development Build |
+| -------------------------------- | ------------ | ----------------- |
+| ✅ **UI hoạt động**              | ✅ Hoàn toàn | ✅ Hoàn toàn      |
+| ✅ **Permission request**        | ✅ Hoạt động | ✅ Hoạt động      |
+| ✅ **Schedule notifications**    | ⚠️ Limited   | ✅ Full support   |
+| ✅ **Tap navigation**            | ❌ Không     | ✅ Hoàn toàn      |
+| ✅ **List/Cancel notifications** | ⚠️ Limited   | ✅ Hoàn toàn      |
+
+**Solutions**:
+
+1. **Testing UI** (hiện tại): Expo Go - UI hoạt động hoàn hảo
+2. **Full Features** (production): Development build:
+
+   ```bash
+   npm install -g eas-cli
+   eas login
+   eas build --profile development --platform android
+   ```
+
+   📖 **Chi tiết**: Xem [DEVELOPMENT_BUILD_GUIDE.md](./DEVELOPMENT_BUILD_GUIDE.md)
+
+3. **Ignore warnings**: App vẫn hoạt động tốt cho development
 
 ### ❌ Notifications không hoạt động
-
-**Issue**: Expo Go không support full notifications
 
 **Solutions**:
 
