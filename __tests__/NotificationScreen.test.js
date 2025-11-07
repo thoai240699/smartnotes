@@ -145,13 +145,15 @@ describe('NotificationScreen', () => {
       expect(getByText('Đang tải thông báo...')).toBeTruthy();
     });
 
-    it('should render header with title', async () => {
-      const { getByText } = renderWithProviders(
+    it('should render notification list', async () => {
+      const { getAllByText } = renderWithProviders(
         <NotificationScreen navigation={mockNavigation} />
       );
 
       await waitFor(() => {
-        expect(getByText('Quản lý thông báo')).toBeTruthy();
+        expect(
+          getAllByText(/Shopping List|Meeting Notes/i).length
+        ).toBeGreaterThan(0);
       });
     });
 

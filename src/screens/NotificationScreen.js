@@ -324,15 +324,24 @@ const NotificationScreen = ({ navigation }) => {
         backgroundColor={themeColors.background}
       />
 
-      <View style={styles.header}>
-
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: themeColors.card,
+            borderBottomColor: themeColors.border,
+          },
+        ]}
+      >
         {scheduledNotifications.length > 0 && (
           <TouchableOpacity
             style={styles.clearAllButton}
             onPress={handleClearAllNotifications}
           >
             <Ionicons name="trash-outline" size={20} color={Colors.error} />
-            <Text style={styles.clearAllText}>Xóa tất cả</Text>
+            <Text style={[styles.clearAllText, { color: Colors.error }]}>
+              Xóa tất cả
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -345,7 +354,10 @@ const NotificationScreen = ({ navigation }) => {
             <View
               style={[
                 styles.statsContainer,
-                { backgroundColor: themeColors.card },
+                { 
+                  backgroundColor: themeColors.card,
+                  borderBottomColor: themeColors.border 
+                },
               ]}
             >
               <Text style={[styles.statsText, { color: themeColors.text }]}>

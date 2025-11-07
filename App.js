@@ -10,7 +10,7 @@ import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
 import { configureNotificationHandler } from './src/utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ThemeProvider } from './src/contexts/ThemeContext';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -34,16 +34,21 @@ const RootStack = createNativeStackNavigator();
 
 // Bottom Tab Navigator
 function MainTabs() {
+  const { isDarkMode } = useTheme();
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
+
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.light.textSecondary,
+        tabBarInactiveTintColor: themeColors.textSecondary,
         headerShown: false,
         tabBarStyle: {
           paddingBottom: 5,
           paddingTop: 5,
           height: 60,
+          backgroundColor: themeColors.card,
+          borderTopColor: themeColors.border,
         },
       }}
     >

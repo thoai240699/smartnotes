@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -53,6 +54,10 @@ const HomeScreen = ({ navigation }) => {
     <View
       style={[styles.container, { backgroundColor: themeColors.background }]}
     >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
       {/* Category Filter */}
       <View style={styles.categoryContainer}>
         <FlatList
