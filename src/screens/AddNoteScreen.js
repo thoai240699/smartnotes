@@ -9,12 +9,14 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { createNoteAsync } from '../redux/noteSlice';
 import CameraPicker from '../components/CameraPicker';
 import MapPicker from '../components/MapPicker';
 import NotificationScheduler from '../components/NotificationScheduler';
+import { scheduleNoteNotification } from '../utils/notificationHelper';
 import {
   Colors,
   Spacing,
@@ -38,12 +40,22 @@ const AddNoteScreen = ({ navigation }) => {
 
   const handleSave = async () => {
     if (!title.trim()) {
-      alert('Vui lòng nhập tiêu đề');
+      Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề');
       return;
     }
 
+    // Validate notification date
+    if (notificationEnabled && dueDate) {
+      const selectedDate = new Date(dueDate);
+      const now = new Date();
+      if (selectedDate <= now) {
+        Alert.alert('Lỗi', 'Thời gian nhắc nhở phải ở tương lai');
+        return;
+      }
+    }
+
     const noteData = {
-      userId: currentUser.id,
+      userId: currentUser?.id || 'default',
       title: title.trim(),
       content: content.trim(),
       category,
@@ -54,10 +66,37 @@ const AddNoteScreen = ({ navigation }) => {
     };
 
     try {
-      await dispatch(createNoteAsync(noteData)).unwrap();
+      // Create note first
+      const result = await dispatch(createNoteAsync(noteData)).unwrap();
+
+      // Schedule notification if enabled
+      if (notificationEnabled && dueDate && result) {
+        const notificationId = await scheduleNoteNotification({
+          ...result,
+          dueDate,
+        });
+
+        if (notificationId) {
+          Alert.alert(
+            'Thành công',
+            'Ghi chú đã được tạo và thông báo đã được lên lịch',
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert(
+            'Thành công',
+            'Ghi chú đã được tạo nhưng không thể lên lịch thông báo',
+            [{ text: 'OK' }]
+          );
+        }
+      } else {
+        Alert.alert('Thành công', 'Ghi chú đã được tạo', [{ text: 'OK' }]);
+      }
+
       navigation.goBack();
     } catch (error) {
-      alert('Lỗi khi tạo ghi chú: ' + error);
+      console.log('Error creating note:', error);
+      Alert.alert('Lỗi', 'Không thể tạo ghi chú: ' + error.message);
     }
   };
 
