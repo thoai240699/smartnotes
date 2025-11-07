@@ -6,6 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import noteReducer from '../src/redux/noteSlice';
 import userReducer from '../src/redux/userSlice';
 import SearchScreen from '../src/screens/SearchScreen';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
 
 // Mock navigation
 const mockNavigate = jest.fn();
@@ -98,7 +99,9 @@ const renderWithProviders = (
 ) => {
   return render(
     <Provider store={store}>
-      <NavigationContainer>{component}</NavigationContainer>
+      <ThemeProvider>
+        <NavigationContainer>{component}</NavigationContainer>
+      </ThemeProvider>
     </Provider>,
     options
   );

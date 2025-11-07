@@ -10,6 +10,7 @@ import {
   ScrollView,
   Switch,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/userSlice';
@@ -391,6 +392,10 @@ const ProfileScreen = ({ navigation }) => {
     <ScrollView
       style={[styles.container, { backgroundColor: themeColors.background }]}
     >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
       <View style={[styles.profileCard, { backgroundColor: themeColors.card }]}>
         {user?.avatar ? (
           <Image source={{ uri: user.avatar }} style={styles.avatar} />

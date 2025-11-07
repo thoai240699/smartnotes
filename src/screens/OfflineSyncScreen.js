@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Alert,
   Modal,
+  StatusBar,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
@@ -509,6 +510,10 @@ const OfflineSyncScreen = ({ navigation }) => {
       }
       testID="offline-sync-screen"
     >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
       <View style={styles.header}>
         <Ionicons name="sync-circle" size={48} color={Colors.primary} />
         <Text style={[styles.title, { color: themeColors.text }]}>

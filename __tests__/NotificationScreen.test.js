@@ -6,6 +6,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import noteReducer from '../src/redux/noteSlice';
 import userReducer from '../src/redux/userSlice';
 import NotificationScreen from '../src/screens/NotificationScreen';
+import { ThemeProvider } from '../src/contexts/ThemeContext';
 
 // Mock notification helper
 const mockGetAllScheduledNotifications = jest.fn();
@@ -113,7 +114,9 @@ const renderWithProviders = (
 ) => {
   return render(
     <Provider store={store}>
-      <NavigationContainer>{component}</NavigationContainer>
+      <ThemeProvider>
+        <NavigationContainer>{component}</NavigationContainer>
+      </ThemeProvider>
     </Provider>,
     options
   );
@@ -142,13 +145,15 @@ describe('NotificationScreen', () => {
       expect(getByText('Đang tải thông báo...')).toBeTruthy();
     });
 
-    it('should render header with title', async () => {
-      const { getByText } = renderWithProviders(
+    it('should render notification list', async () => {
+      const { getAllByText } = renderWithProviders(
         <NotificationScreen navigation={mockNavigation} />
       );
 
       await waitFor(() => {
-        expect(getByText('Quản lý thông báo')).toBeTruthy();
+        expect(
+          getAllByText(/Shopping List|Meeting Notes/i).length
+        ).toBeGreaterThan(0);
       });
     });
 
