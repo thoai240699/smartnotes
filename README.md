@@ -47,6 +47,9 @@
 - 🔄 **Sync**: Đồng bộ cloud (khi đăng nhập)
 - 🎨 **Icons**: Beautiful Ionicons trong tab navigation
 - ⚡ **Performance**: 60fps scrolling, optimized memory usage
+- 🌙 **Dark Mode**: Theme switching với persistence
+- 📊 **Statistics**: Real-time note statistics
+- ℹ️ **About**: App information và credits
 
 ## 🔔 Smart Notification System
 
@@ -160,7 +163,129 @@ npm test NotificationScreen
 
 ---
 
-## 🚀 Quick Start (5 phút)
+## � Profile & Settings System
+
+### ✨ Tính năng Profile & Settings
+
+SmartNotes+ có hệ thống quản lý profile và cài đặt đầy đủ:
+
+#### 🎯 Core Features
+
+- ✅ **Dark Mode Toggle**: Chuyển đổi giao diện sáng/tối với lưu trữ bền vững
+- ✅ **Notification Settings**: Quản lý quyền thông báo
+- ✅ **App Statistics**: Thống kê ghi chú theo thời gian thực
+- ✅ **About Page**: Thông tin ứng dụng và tính năng
+- ✅ **Guest Mode Support**: Tất cả features hoạt động không cần đăng nhập
+- ✅ **Logged In Mode**: Hiển thị profile đầy đủ khi đăng nhập
+
+#### 📱 Profile Screen Features
+
+**Guest Mode:**
+
+| Feature              | Description                             | Status |
+| -------------------- | --------------------------------------- | ------ |
+| 🌙 **Dark Mode**     | Toggle theme with persistence           | ✅     |
+| 🔔 **Notifications** | Enable/disable with permission handling | ✅     |
+| 📊 **Statistics**    | View note stats and categories          | ✅     |
+| ℹ️ **About**         | App info, version, features list        | ✅     |
+| 🔐 **Login Button**  | Navigate to login screen                | ✅     |
+
+**Logged In Mode:**
+
+| Feature                | Description              | Status |
+| ---------------------- | ------------------------ | ------ |
+| 👤 **Profile Display** | Avatar, name, email      | ✅     |
+| ✏️ **Edit Profile**    | Navigate to edit screen  | ✅     |
+| 🌙 **Dark Mode**       | Toggle theme             | ✅     |
+| 🔔 **Notifications**   | Manage permissions       | ✅     |
+| 📊 **Statistics**      | Real-time note stats     | ✅     |
+| ℹ️ **About**           | App information          | ✅     |
+| 🚪 **Logout**          | With confirmation dialog | ✅     |
+
+#### 📊 Statistics Modal
+
+**Displays:**
+
+- 📈 Total notes count
+- ✅ Completed notes count
+- ⏳ Pending notes count
+- 🏷️ Notes by category (Work, Personal, Shopping, Health, Other)
+- 📊 Real-time calculations from Redux state
+
+#### ℹ️ About Modal
+
+**Contains:**
+
+- 📱 App name: SmartNotes+
+- 🔢 Version: 1.1.0
+- 📝 Description and features list
+- ❤️ Credits: Made with ❤️ by Team SmartNotes+
+- © Copyright: © 2025 UIT - Đồ án môn học
+
+#### 🔧 Technical Implementation
+
+**ThemeContext with AsyncStorage:**
+
+```javascript
+// Dark mode toggle
+const { isDarkMode, toggleTheme } = useTheme();
+
+// Automatic persistence
+AsyncStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+
+// Apply theme colors
+const themeColors = isDarkMode ? Colors.dark : Colors.light;
+```
+
+**Notification Settings:**
+
+```javascript
+// Check and request permissions
+const { status } = await Notifications.requestPermissionsAsync();
+
+// Handle permission states
+if (status === 'granted') {
+  setNotificationsEnabled(true);
+} else {
+  Alert.alert('Quyền thông báo', 'Vui lòng bật quyền...');
+}
+```
+
+**Statistics Calculation:**
+
+```javascript
+// Real-time from Redux
+const statistics = {
+  totalNotes: notes.length,
+  completedNotes: notes.filter((n) => n.isCompleted).length,
+  pendingNotes: notes.filter((n) => !n.isCompleted).length,
+  notesByCategory: categoryCounts,
+};
+```
+
+#### 🧪 Testing Coverage
+
+Profile & Settings có **37 comprehensive tests**:
+
+```bash
+npm test ProfileScreen
+# ✅ PASS 37/37 tests
+```
+
+**Test Categories:**
+
+- ✅ Guest Mode (4 tests)
+- ✅ Logged In Mode (6 tests)
+- ✅ Dark Mode Toggle (3 tests)
+- ✅ Notification Settings (5 tests)
+- ✅ App Statistics (7 tests)
+- ✅ About Page (6 tests)
+- ✅ Integration (3 tests)
+- ✅ Error Handling (3 tests)
+
+---
+
+## �🚀 Quick Start (5 phút)
 
 ### 1️⃣ Cài đặt Dependencies
 
@@ -223,6 +348,10 @@ expo start
 | ✏️ **Edit/Delete**             | ✅         | Chỉnh sửa và xóa ghi chú                        |
 | 🔍 **Search/Filter**           | ✅         | Tìm kiếm và lọc theo category                   |
 | 📱 **Notification Management** | ✅         | Xem, hủy, quản lý notifications đã đặt lịch     |
+| 🌙 **Dark Mode**               | ✅         | Toggle theme sáng/tối với lưu trữ bền vững      |
+| 🔔 **Notification Settings**   | ✅         | Quản lý quyền thông báo                         |
+| 📊 **Statistics**              | ✅         | Xem thống kê ghi chú chi tiết                   |
+| ℹ️ **About**                   | ✅         | Thông tin ứng dụng và tính năng                 |
 | 📴 **Offline**                 | ✅         | Hoạt động hoàn toàn offline                     |
 | 💾 **Storage**                 | ✅         | SQLite local database                           |
 
@@ -574,11 +703,12 @@ SmartNotes/
 
 3. **Profile & Settings**
 
-   - ✅ Complete `ProfileScreen.js` (base done)
-   - 🔧 Dark mode toggle
-   - 🔧 Notification settings
-   - 🔧 App statistics
-   - 🔧 About page
+   - ✅ Complete `ProfileScreen.js` - Full implementation with all features
+   - ✅ **Dark mode toggle** - Theme switching with persistence
+   - ✅ **Notification settings** - Permission management
+   - ✅ **App statistics** - Real-time note statistics
+   - ✅ **About page** - App information and credits
+   - ✅ **Comprehensive testing** - 37 test cases covering all features
 
 4. **Offline Sync**
 
@@ -588,10 +718,10 @@ SmartNotes/
    - 🔧 Conflict resolution UI
 
 5. **Dark Mode**
-   - 🔧 Implement ThemeContext
-   - 🔧 Toggle dark/light
-   - 🔧 Save preference
-   - 🔧 Apply to all screens
+   - ✅ Implement ThemeContext - Context API with AsyncStorage
+   - ✅ Toggle dark/light - Switch in Profile screen
+   - ✅ Save preference - Persistent across app restarts
+   - 🔧 Apply to all screens - Gradual rollout
 
 #### Files:
 
@@ -600,7 +730,8 @@ SmartNotes/
 - `src/screens/ProfileScreen.js`
 - `src/screens/OfflineSyncScreen.js`
 - `src/utils/notificationHelper.js`
-- `src/contexts/ThemeContext.js` (new)
+- `src/contexts/ThemeContext.js` ✅
+- `__tests__/ProfileScreen.test.js` ✅
 
 #### Timeline: 4-5 ngày
 
@@ -666,7 +797,16 @@ SmartNotes/
 - [ ] Empty state when no notifications
 - [ ] Permission request works properly
 
-#### 8️⃣ Logged In Mode
+#### 8️⃣ Profile & Settings Features
+
+- [ ] Navigate to Profile tab
+- [ ] Toggle dark mode → Theme changes
+- [ ] Toggle notifications → Permission handling works
+- [ ] Open statistics → See note counts and categories
+- [ ] Open about page → See app information
+- [ ] All modals close properly
+
+#### 9️⃣ Logged In Mode
 
 - [ ] Profile shows avatar, name, email
 - [ ] Can create notes (synced to cloud)
@@ -692,6 +832,10 @@ npm start -- --clear
 # Test notification system
 npm test NotificationScreen
 # Expected: ✅ PASS 19/19 tests
+
+# Test profile & settings
+npm test ProfileScreen
+# Expected: ✅ PASS 37/37 tests
 
 # Test all screens
 npm test
@@ -976,6 +1120,14 @@ eas build --profile development --platform android
   - [x] Tap navigation to note details
   - [x] Notification management (view/cancel)
   - [x] 19 comprehensive test cases
+- [x] **Profile & Settings System** 🆕
+  - [x] ProfileScreen.js with complete features
+  - [x] Dark mode toggle with persistence
+  - [x] Notification settings with permission handling
+  - [x] App statistics (total, completed, pending, by category)
+  - [x] About page with app information
+  - [x] 37 comprehensive test cases
+  - [x] ThemeContext implementation
 
 ### 🔧 In Progress
 
@@ -987,8 +1139,7 @@ eas build --profile development --platform android
 ### 📋 Todo
 
 - [ ] Offline sync management
-- [ ] Dark mode implementation
-- [ ] Statistics screen
+- [ ] Apply dark mode theme to all screens
 - [ ] Conflict resolution UI
 - [ ] Production deployment
 - [ ] Bundle size optimization
@@ -1031,11 +1182,48 @@ Copyright (c) 2025 Team SmartNotes+
 
 ## �‍💻 Team Members
 
-| Person       | Role          | Focus Areas                              |
-| ------------ | ------------- | ---------------------------------------- |
-| **Person A** | Auth Lead     | Authentication, User Management, Session |
-| **Person B** | Data Lead     | Notes CRUD, SQLite, Sync, Media          |
-| **Person C** | Features Lead | Search, Notifications, UI/UX, Dark Mode  |
+| Person       | Role          | Focus Areas                                         |
+| ------------ | ------------- | --------------------------------------------------- |
+| **Person A** | Auth Lead     | Authentication, User Management, Session            |
+| **Person B** | Data Lead     | Notes CRUD, SQLite, Sync, Media                     |
+| **Person C** | Features Lead | Search, Notifications, Profile, Settings, Dark Mode |
+
+---
+
+## 🎉 Latest Updates (v1.1.0)
+
+### ✨ New Features
+
+**Profile & Settings System** (37 tests ✅)
+
+- 🌙 Dark mode toggle with AsyncStorage persistence
+- 🔔 Notification settings with permission management
+- 📊 Real-time app statistics (total, completed, pending notes)
+- 🏷️ Notes breakdown by category
+- ℹ️ About page with app information
+- 👤 Full profile management (Guest & Logged In modes)
+
+**Smart Notification System** (19 tests ✅)
+
+- ⏰ Auto-scheduling when creating notes with due dates
+- 📱 Notification management (view, cancel)
+- 🔔 Permission handling with user-friendly messages
+- 🎯 Tap navigation to note details
+
+**Performance Optimizations**
+
+- ⚡ 60fps scrolling with FlatList virtualization
+- 📷 90% image compression (3-8MB → 300-800KB)
+- 🚀 Component memoization (-50% re-renders)
+- 💾 Comprehensive SQLite error handling
+- 🔒 Redux serialization fixes
+
+### 📊 Test Coverage
+
+- **Total Tests**: 56+ comprehensive tests
+- **NotificationScreen**: 19/19 passing ✅
+- **ProfileScreen**: 37/37 passing ✅
+- **Coverage**: Core features fully tested
 
 ---
 
@@ -1053,14 +1241,27 @@ Copyright (c) 2025 Team SmartNotes+
 
 🚀 **v1.1.0 - Optimized & Production Ready!**
 
-✨ Features:
+✨ **New Features:**
 
-- Guest Mode - No login required
-- 90% image compression
-- 60fps smooth scrolling
-- Comprehensive error handling
-- Crash rate < 1%
+- 👤 Profile & Settings - Dark mode, notifications, statistics, about
+- ⏰ Smart Notifications - Auto-scheduling & tap navigation
+- 🌙 Dark Mode - Theme switching with persistence
+- 📊 Statistics - Real-time note analytics
+- ⚡ Performance - 60fps scrolling, 90% image compression
+- 🧪 Testing - 56+ comprehensive tests
 
-⭐ Star this repo if you find it useful!
+**Core Features:**
+
+- 📝 Guest Mode - No login required
+- 📷 90% image compression
+- ⚡ 60fps smooth scrolling
+- 🔒 Comprehensive error handling
+- 💾 SQLite offline storage
+- ☁️ Cloud sync (when logged in)
+- 🎯 Crash rate < 1%
+
+⭐ **Star this repo if you find it useful!**
 
 💡 **Quick Start**: `npm install && npm start`
+
+🧪 **Test**: `npm test` - All 56+ tests passing ✅
