@@ -16,6 +16,7 @@ import {
 } from '../redux/noteSlice';
 import NoteCard from '../components/NoteCard';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
+import { useTheme } from '../contexts/ThemeContext';
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -23,9 +24,9 @@ const HomeScreen = ({ navigation }) => {
     (state) => state.note
   );
   const { currentUser, isAuthenticated } = useSelector((state) => state.user);
-  const [theme, setTheme] = useState('light');
+  const { isDarkMode } = useTheme();
 
-  const themeColors = theme === 'dark' ? Colors.dark : Colors.light;
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   useEffect(() => {
     // Load notes from local SQLite (works without login)

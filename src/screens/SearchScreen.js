@@ -13,6 +13,13 @@ import {
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import NoteCard from '../components/NoteCard';
+import { useTheme } from '../contexts/ThemeContext';
+import {
+  Colors,
+  Spacing,
+  FontSizes,
+  BorderRadius,
+} from '../styles/globalStyles';
 
 const CATEGORIES = [
   { id: 'all', name: 'Tất cả', icon: 'apps-outline' },
@@ -26,6 +33,9 @@ const SearchScreen = ({ navigation }) => {
   const notes = useSelector((state) => state.note.notes);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const { isDarkMode } = useTheme();
+
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   // Filter logic
   const filteredNotes = useMemo(() => {
@@ -69,19 +79,25 @@ const SearchScreen = ({ navigation }) => {
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="search-outline" size={64} color="#CBD5E1" />
+        <Ionicons
+          name="search-outline"
+          size={64}
+          color={themeColors.textSecondary}
+        />
       </View>
-      <Text style={styles.emptyTitle}>
+      <Text style={[styles.emptyTitle, { color: themeColors.text }]}>
         {searchQuery.trim() ? 'Không tìm thấy kết quả' : 'Tìm kiếm ghi chú'}
       </Text>
-      <Text style={styles.emptySubtitle}>
+      <Text
+        style={[styles.emptySubtitle, { color: themeColors.textSecondary }]}
+      >
         {searchQuery.trim()
           ? `Không có ghi chú nào khớp với "${searchQuery}"`
           : 'Nhập từ khóa hoặc chọn danh mục để tìm kiếm'}
       </Text>
       {searchQuery.trim() && (
         <TouchableOpacity
-          style={styles.emptyButton}
+          style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
           onPress={handleClearSearch}
         >
           <Text style={styles.emptyButtonText}>Xóa tìm kiếm</Text>
@@ -91,26 +107,42 @@ const SearchScreen = ({ navigation }) => {
   );
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <View
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
 
       {/* Fixed Header */}
-      <View style={styles.headerContainer}>
-
-
+      <View
+        style={[
+          styles.headerContainer,
+          { backgroundColor: themeColors.background },
+        ]}
+      >
         {/* Search Bar */}
         <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
+          <View
+            style={[
+              styles.searchBar,
+              {
+                backgroundColor: themeColors.card,
+                borderColor: themeColors.border,
+              },
+            ]}
+          >
             <Ionicons
               name="search-outline"
               size={20}
-              color="#64748B"
+              color={themeColors.textSecondary}
               style={styles.searchIcon}
             />
             <TextInput
-              style={styles.searchInput}
+              style={[styles.searchInput, { color: themeColors.text }]}
               placeholder="Tìm kiếm ghi chú..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={themeColors.textSecondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoCapitalize="none"
@@ -124,7 +156,11 @@ const SearchScreen = ({ navigation }) => {
                 style={styles.clearIconButton}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="close-circle" size={20} color="#94A3B8" />
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={themeColors.textSecondary}
+                />
               </TouchableOpacity>
             )}
           </View>
@@ -144,6 +180,10 @@ const SearchScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.categoryChip,
+                    {
+                      backgroundColor: themeColors.card,
+                      borderColor: themeColors.border,
+                    },
                     isSelected && styles.categoryChipSelected,
                   ]}
                   onPress={() => setSelectedCategory(item.id)}
@@ -152,12 +192,13 @@ const SearchScreen = ({ navigation }) => {
                   <Ionicons
                     name={item.icon}
                     size={16}
-                    color={isSelected ? '#FFFFFF' : '#64748B'}
+                    color={isSelected ? '#FFFFFF' : themeColors.text}
                     style={styles.categoryIcon}
                   />
                   <Text
                     style={[
                       styles.categoryText,
+                      { color: themeColors.text },
                       isSelected && styles.categoryTextSelected,
                     ]}
                   >
@@ -175,7 +216,7 @@ const SearchScreen = ({ navigation }) => {
         {/* Results Header - Only show when has results */}
         {filteredNotes.length > 0 && (
           <View style={styles.resultsHeader}>
-            <Text style={styles.resultsCount}>
+            <Text style={[styles.resultsCount, { color: themeColors.text }]}>
               {filteredNotes.length} kết quả
             </Text>
             {hasActiveFilters && (
@@ -186,7 +227,7 @@ const SearchScreen = ({ navigation }) => {
                 <Ionicons
                   name="close-circle-outline"
                   size={16}
-                  color="#3B82F6"
+                  color={Colors.primary}
                 />
                 <Text style={styles.clearFiltersText}>Xóa bộ lọc</Text>
               </TouchableOpacity>
@@ -206,7 +247,9 @@ const SearchScreen = ({ navigation }) => {
             <View style={styles.noteCardWrapper}>
               <NoteCard
                 note={item}
-                onPress={() => navigation.navigate('NoteDetail', { note: item })}
+                onPress={() =>
+                  navigation.navigate('NoteDetail', { note: item })
+                }
               />
             </View>
           )}
@@ -224,7 +267,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAFC',
   },
-  
+
   // Header Container (Fixed)
   headerContainer: {
     backgroundColor: '#FFFFFF',
@@ -243,7 +286,7 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     letterSpacing: -0.5,
   },
-  
+
   // Search Bar
   searchBarContainer: {
     paddingTop: 12,
@@ -274,7 +317,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     padding: 4,
   },
-  
+
   // Category Filter
   categoryContainer: {
     paddingBottom: 12,
@@ -309,12 +352,12 @@ const styles = StyleSheet.create({
   categoryTextSelected: {
     color: '#FFFFFF',
   },
-  
+
   // Content Container (Scrollable)
   contentContainer: {
     flex: 1,
   },
-  
+
   // Results Header
   resultsHeader: {
     flexDirection: 'row',
@@ -342,7 +385,7 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
     marginLeft: 4,
   },
-  
+
   // List Content
   listContent: {
     paddingHorizontal: 16,
@@ -355,7 +398,7 @@ const styles = StyleSheet.create({
   noteCardWrapper: {
     marginVertical: 6,
   },
-  
+
   // Empty State
   emptyContainer: {
     flex: 1,

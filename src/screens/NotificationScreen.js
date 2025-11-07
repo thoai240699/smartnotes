@@ -16,6 +16,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   getAllScheduledNotifications,
   cancelNotification,
@@ -30,6 +31,9 @@ const NotificationScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState(null);
   const notes = useSelector((state) => state.note.notes);
+  const { isDarkMode } = useTheme();
+
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   // Load scheduled notifications when screen focuses
   useFocusEffect(
@@ -158,23 +162,43 @@ const NotificationScreen = ({ navigation }) => {
     const isExpired = triggerDate < now;
 
     return (
-      <View style={[styles.notificationItem, isExpired && styles.expiredItem]}>
+      <View
+        style={[
+          styles.notificationItem,
+          { backgroundColor: themeColors.card },
+          isExpired && styles.expiredItem,
+        ]}
+      >
         <View style={styles.notificationHeader}>
           <View style={styles.notificationIcon}>
             <Ionicons
               name={isExpired ? 'time-outline' : 'notifications-outline'}
               size={24}
-              color={isExpired ? Colors.light.textSecondary : Colors.primary}
+              color={isExpired ? themeColors.textSecondary : Colors.primary}
             />
           </View>
           <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle} numberOfLines={1}>
+            <Text
+              style={[styles.notificationTitle, { color: themeColors.text }]}
+              numberOfLines={1}
+            >
               {item.content.title}
             </Text>
-            <Text style={styles.notificationBody} numberOfLines={2}>
+            <Text
+              style={[
+                styles.notificationBody,
+                { color: themeColors.textSecondary },
+              ]}
+              numberOfLines={2}
+            >
               {item.content.body}
             </Text>
-            <Text style={styles.notificationDate}>
+            <Text
+              style={[
+                styles.notificationDate,
+                { color: themeColors.textSecondary },
+              ]}
+            >
               {isExpired ? '⏰ Đã qua: ' : '📅 '}
               {formatDateTime(triggerDate)}
             </Text>
@@ -192,7 +216,9 @@ const NotificationScreen = ({ navigation }) => {
                 size={20}
                 color={Colors.primary}
               />
-              <Text style={styles.actionText}>Xem ghi chú</Text>
+              <Text style={[styles.actionText, { color: Colors.primary }]}>
+                Xem ghi chú
+              </Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity
@@ -216,11 +242,7 @@ const NotificationScreen = ({ navigation }) => {
               handleCancelNotification(item.identifier, item.content.title)
             }
           >
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={Colors.light.error}
-            />
+            <Ionicons name="trash-outline" size={20} color={Colors.error} />
             <Text style={[styles.actionText, styles.cancelText]}>Hủy</Text>
           </TouchableOpacity>
         </View>
@@ -231,14 +253,22 @@ const NotificationScreen = ({ navigation }) => {
   const EmptyState = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name="notifications-off-outline" size={64} color="#CBD5E1" />
+        <Ionicons
+          name="notifications-off-outline"
+          size={64}
+          color={themeColors.textSecondary}
+        />
       </View>
-      <Text style={styles.emptyTitle}>Chưa có thông báo nào</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: themeColors.text }]}>
+        Chưa có thông báo nào
+      </Text>
+      <Text
+        style={[styles.emptySubtitle, { color: themeColors.textSecondary }]}
+      >
         Tạo ghi chú với ngày hạn để nhận thông báo nhắc nhở
       </Text>
       <TouchableOpacity
-        style={styles.emptyButton}
+        style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
         onPress={() => navigation.navigate('AddNote')}
       >
         <Text style={styles.emptyButtonText}>Tạo ghi chú mới</Text>
@@ -251,12 +281,16 @@ const NotificationScreen = ({ navigation }) => {
       <View style={styles.emptyIconContainer}>
         <Ionicons name="notifications-off" size={64} color="#EF4444" />
       </View>
-      <Text style={styles.emptyTitle}>Chưa cấp quyền thông báo</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: themeColors.text }]}>
+        Chưa cấp quyền thông báo
+      </Text>
+      <Text
+        style={[styles.emptySubtitle, { color: themeColors.textSecondary }]}
+      >
         Vui lòng cấp quyền thông báo để sử dụng tính năng nhắc nhở
       </Text>
       <TouchableOpacity
-        style={styles.emptyButton}
+        style={[styles.emptyButton, { backgroundColor: Colors.primary }]}
         onPress={checkPermissionStatus}
       >
         <Text style={styles.emptyButtonText}>Cấp quyền</Text>
@@ -266,29 +300,38 @@ const NotificationScreen = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
+      <View
+        style={[
+          styles.container,
+          styles.centerContent,
+          { backgroundColor: themeColors.background },
+        ]}
+      >
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Đang tải thông báo...</Text>
+        <Text style={[styles.loadingText, { color: themeColors.text }]}>
+          Đang tải thông báo...
+        </Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
 
       <View style={styles.header}>
-        <Text style={styles.title}>Quản lý thông báo</Text>
+
         {scheduledNotifications.length > 0 && (
           <TouchableOpacity
             style={styles.clearAllButton}
             onPress={handleClearAllNotifications}
           >
-            <Ionicons
-              name="trash-outline"
-              size={20}
-              color={Colors.light.error}
-            />
+            <Ionicons name="trash-outline" size={20} color={Colors.error} />
             <Text style={styles.clearAllText}>Xóa tất cả</Text>
           </TouchableOpacity>
         )}
@@ -299,8 +342,13 @@ const NotificationScreen = ({ navigation }) => {
       ) : (
         <>
           {scheduledNotifications.length > 0 && (
-            <View style={styles.statsContainer}>
-              <Text style={styles.statsText}>
+            <View
+              style={[
+                styles.statsContainer,
+                { backgroundColor: themeColors.card },
+              ]}
+            >
+              <Text style={[styles.statsText, { color: themeColors.text }]}>
                 {scheduledNotifications.length} thông báo đã lên lịch
               </Text>
             </View>
