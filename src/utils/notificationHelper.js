@@ -6,6 +6,10 @@ import Constants from 'expo-constants';
 // Check if running in Expo Go
 const isExpoGo = Constants.appOwnership === 'expo';
 
+// Notification handler reference
+let notificationListener = null;
+let responseListener = null;
+
 /**
  * Check if notifications are supported
  * @returns {boolean}
@@ -44,16 +48,22 @@ export const requestNotificationPermissions = async () => {
 
     if (finalStatus !== 'granted') {
       console.log('Notification permission not granted');
+      Alert.alert(
+        'Thông báo',
+        'Vui lòng cấp quyền thông báo trong cài đặt để nhận nhắc nhở',
+        [{ text: 'OK' }]
+      );
       return false;
     }
 
     // Configure notification channel for Android
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('default', {
-        name: 'default',
-        importance: Notifications.AndroidImportance.MAX,
+        name: 'SmartNotes Reminders',
+        importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#3B82F6',
+        description: 'Thông báo nhắc nhở cho ghi chú',
       });
     }
 
@@ -97,20 +107,36 @@ export const scheduleNoteNotification = async (note) => {
 
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Nhắc nhở: ' + note.title,
-        body: note.content || 'Bạn có việc cần làm',
-        data: { noteId: note.id },
+        title: `📝 ${note.title}`,
+        body: note.content
+          ? note.content.substring(0, 100) +
+            (note.content.length > 100 ? '...' : '')
+          : 'Bạn có việc cần làm',
+        data: {
+          noteId: note.id,
+          type: 'note_reminder',
+          timestamp: Date.now(),
+        },
         sound: true,
+        badge: 1,
       },
       trigger: {
         date: dueDate,
       },
     });
 
-    console.log('Notification scheduled:', notificationId);
+    console.log(
+      'Notification scheduled:',
+      notificationId,
+      'for date:',
+      dueDate
+    );
     return notificationId;
   } catch (error) {
     console.log('Error scheduling notification:', error);
+    Alert.alert('Lỗi', 'Không thể lên lịch thông báo. Vui lòng thử lại.', [
+      { text: 'OK' },
+    ]);
     return null;
   }
 };
@@ -125,6 +151,7 @@ export const cancelNotification = async (notificationId) => {
     console.log('Notification cancelled:', notificationId);
   } catch (error) {
     console.log('Error cancelling notification:', error);
+    throw error;
   }
 };
 
@@ -137,6 +164,7 @@ export const cancelAllNotifications = async () => {
     console.log('All notifications cancelled');
   } catch (error) {
     console.log('Error cancelling all notifications:', error);
+    throw error;
   }
 };
 
@@ -148,6 +176,7 @@ export const getAllScheduledNotifications = async () => {
   try {
     const notifications =
       await Notifications.getAllScheduledNotificationsAsync();
+    console.log('Retrieved notifications:', notifications.length);
     return notifications;
   } catch (error) {
     console.log('Error getting scheduled notifications:', error);
@@ -156,25 +185,162 @@ export const getAllScheduledNotifications = async () => {
 };
 
 /**
- * Configure notification handler
+ * Configure notification handler and listeners
+ * @param {Function} onNotificationReceived - Callback when notification received
+ * @param {Function} onNotificationTapped - Callback when notification tapped
  */
-export const configureNotificationHandler = () => {
+export const configureNotificationHandler = (
+  onNotificationReceived,
+  onNotificationTapped
+) => {
   try {
-    if (isNotificationsSupported()) {
-      Notifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowAlert: true,
-          shouldPlaySound: true,
-          shouldSetBadge: true,
-        }),
-      });
-      console.log('Notification handler configured');
-    } else {
+    if (!isNotificationsSupported()) {
       console.log(
         'Skipping notification handler configuration (not supported in Expo Go)'
       );
+      return;
     }
+
+    // Configure how notifications should be displayed
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        console.log(
+          'Notification received:',
+          notification.request.content.title
+        );
+
+        // Call callback if provided
+        if (onNotificationReceived) {
+          onNotificationReceived(notification);
+        }
+
+        return {
+          shouldShowAlert: true,
+          shouldPlaySound: true,
+          shouldSetBadge: true,
+        };
+      },
+    });
+
+    // Clean up existing listeners
+    if (notificationListener) {
+      notificationListener.remove();
+    }
+    if (responseListener) {
+      responseListener.remove();
+    }
+
+    // Listen for notifications received while app is in foreground
+    notificationListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        console.log(
+          'Notification received in foreground:',
+          notification.request.content.title
+        );
+      }
+    );
+
+    // Listen for notification taps
+    responseListener = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        console.log(
+          'Notification tapped:',
+          response.notification.request.content.title
+        );
+
+        // Handle notification tap
+        const data = response.notification.request.content.data;
+        if (data && onNotificationTapped) {
+          onNotificationTapped(data);
+        }
+      }
+    );
+
+    console.log('Notification handler configured');
   } catch (error) {
     console.log('Error configuring notification handler:', error);
+  }
+};
+
+/**
+ * Remove notification listeners
+ */
+export const removeNotificationListeners = () => {
+  try {
+    if (notificationListener) {
+      notificationListener.remove();
+      notificationListener = null;
+    }
+    if (responseListener) {
+      responseListener.remove();
+      responseListener = null;
+    }
+    console.log('Notification listeners removed');
+  } catch (error) {
+    console.log('Error removing notification listeners:', error);
+  }
+};
+
+/**
+ * Clear notification badge
+ */
+export const clearNotificationBadge = async () => {
+  try {
+    if (!isNotificationsSupported()) return;
+
+    await Notifications.setBadgeCountAsync(0);
+    console.log('Notification badge cleared');
+  } catch (error) {
+    console.log('Error clearing notification badge:', error);
+  }
+};
+
+/**
+ * Schedule a test notification (for testing purposes)
+ * @param {number} seconds - Number of seconds from now
+ */
+export const scheduleTestNotification = async (seconds = 5) => {
+  try {
+    if (!isNotificationsSupported()) {
+      Alert.alert(
+        'Thông báo',
+        'Tính năng thông báo không được hỗ trợ trong Expo Go',
+        [{ text: 'OK' }]
+      );
+      return null;
+    }
+
+    const hasPermission = await requestNotificationPermissions();
+    if (!hasPermission) {
+      return null;
+    }
+
+    const notificationId = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '🧪 Test Notification',
+        body: 'Thông báo thử nghiệm hoạt động tốt!',
+        data: {
+          type: 'test',
+          timestamp: Date.now(),
+        },
+        sound: true,
+      },
+      trigger: {
+        seconds: seconds,
+      },
+    });
+
+    Alert.alert(
+      'Thành công',
+      `Thông báo thử nghiệm sẽ hiển thị sau ${seconds} giây`,
+      [{ text: 'OK' }]
+    );
+
+    console.log('Test notification scheduled:', notificationId);
+    return notificationId;
+  } catch (error) {
+    console.log('Error scheduling test notification:', error);
+    Alert.alert('Lỗi', 'Không thể tạo thông báo thử nghiệm');
+    return null;
   }
 };

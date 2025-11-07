@@ -147,7 +147,7 @@ function AppStack() {
       />
 
       <Stack.Screen
-        name="EditProfile" 
+        name="EditProfile"
         component={EditProfileScreen}
         options={{ title: 'Chỉnh sửa hồ sơ' }}
       />
@@ -170,6 +170,7 @@ function AppStack() {
 function RootNavigator() {
   //const isSplashLoading = useSelector((state) => state.app.isLoading);
   const dispatch = useDispatch();
+  const [navigationRef, setNavigationRef] = useState(null);
 
   useEffect(() => {
     // Initialize app
@@ -178,25 +179,62 @@ function RootNavigator() {
         // Initialize SQLite database
         await initDatabase();
 
-        // Configure notifications
-        configureNotificationHandler();
+        // Configure notifications with navigation handlers
+        configureNotificationHandler(
+          // onNotificationReceived
+          (notification) => {
+            console.log(
+              'App received notification:',
+              notification.request.content.title
+            );
+          },
+          // onNotificationTapped
+          (data) => {
+            console.log('App notification tapped with data:', data);
+            handleNotificationTap(data);
+          }
+        );
 
         // Check saved authentication from AsyncStorage
-      //   const savedUser = await AsyncStorage.getItem('currentUser');
-      //   if (savedUser) {
-      //     // TODO: dispatch(setUser(JSON.parse(savedUser)));
-      //     console.log('Found saved user:', savedUser);
-      //   }
+        //   const savedUser = await AsyncStorage.getItem('currentUser');
+        //   if (savedUser) {
+        //     // TODO: dispatch(setUser(JSON.parse(savedUser)));
+        //     console.log('Found saved user:', savedUser);
+        //   }
 
-      //   setIsLoading(false);
+        //   setIsLoading(false);
       } catch (error) {
-         console.log('Error initializing app:', error);
+        console.log('Error initializing app:', error);
         // setIsLoading(false);
       }
     };
 
     initApp();
   }, [dispatch]);
+
+  // Handle notification tap navigation
+  const handleNotificationTap = (data) => {
+    if (!navigationRef) return;
+
+    try {
+      if (data.type === 'note_reminder' && data.noteId) {
+        // Navigate to the specific note
+        navigationRef.navigate('MainApp', {
+          screen: 'Main',
+          params: {
+            screen: 'HomeTab',
+          },
+        });
+
+        // Then navigate to note detail after a short delay
+        setTimeout(() => {
+          navigationRef.navigate('NoteDetail', { noteId: data.noteId });
+        }, 500);
+      }
+    } catch (error) {
+      console.log('Error handling notification tap:', error);
+    }
+  };
 
   // if (isLoading) {
   //   return <SplashScreen />;
@@ -205,14 +243,10 @@ function RootNavigator() {
   // Always start with AppStack (Main tabs), now alway start with SplashScreen
   // Login/Register accessible from Profile tab
   return (
-    <NavigationContainer>
-      <RootStack.Navigator
-        screenOptions={{ headerShown: false }}
-      >
-        
-        <RootStack.Screen name="Splash" component={SplashScreen} /> 
-        <RootStack.Screen name="MainApp" component={AppStack} />        
-            
+    <NavigationContainer ref={setNavigationRef}>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="Splash" component={SplashScreen} />
+        <RootStack.Screen name="MainApp" component={AppStack} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
