@@ -5,7 +5,9 @@ import {
   loginUser, 
   registerUser,
   updateUser,
-  updatePassword
+  updatePassword,
+  resetPassword,
+  findUserByEmail,
 } from '../api/AuthAPI';
 
 // AsyncStorage key
@@ -127,6 +129,28 @@ export const loadSessionAsync = createAsyncThunk(
 }
 );
 
+/**
+ * @description Thunk xử lý tìm user theo email
+ */
+export const findUserByEmailAsync = createAsyncThunk(
+  'user/findUserByEmail',
+  async (email, { rejectWithValue }) => {
+    try {
+      const result = await findUserByEmail(email);
+
+      if (!result.success) {
+        return rejectWithValue(result.error || 'Email không tồn tại.');
+      }
+      
+      return result.user; 
+      
+    } catch (error) {
+      console.error('Lỗi Thunk Tìm Email:', error);
+      return rejectWithValue('Lỗi hệ thống khi tìm kiếm email.');
+    }
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -216,6 +240,21 @@ const userSlice = createSlice({
     .addCase(updatePasswordAsync.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload || 'Đổi mật khẩu thất bại.';
+    });
+
+    builder
+    // Xử lý cho Find User By Email
+    .addCase(findUserByEmailAsync.pending, (state) => { 
+      state.loading = true; 
+      state.error = null; 
+    })
+    .addCase(findUserByEmailAsync.fulfilled, (state) => {
+      state.loading = false;
+      state.error = null;
+    })
+    .addCase(findUserByEmailAsync.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload || 'Tìm kiếm email thất bại.';
     });
   },
 });

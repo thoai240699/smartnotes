@@ -16,6 +16,7 @@ import {
 } from '../redux/noteSlice';
 import NoteCard from '../components/NoteCard';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -49,7 +50,7 @@ const HomeScreen = ({ navigation }) => {
   const categories = ['all', 'work', 'personal', 'shopping', 'health', 'other'];
 
   return (
-    <View
+    <SafeAreaView
       style={[styles.container, { backgroundColor: themeColors.background }]}
     >
       {/* Category Filter */}
@@ -133,7 +134,7 @@ const HomeScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.addButton} onPress={handleAddNote}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 

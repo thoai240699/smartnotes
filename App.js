@@ -10,6 +10,7 @@ import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
 import { configureNotificationHandler } from './src/utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -24,6 +25,10 @@ import SearchScreen from './src/screens/SearchScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import OfflineSyncScreen from './src/screens/OfflineSyncScreen';
+import ForgotEmailScreen from './src/screens/ForgotEmailScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
+
 
 import { Colors } from './src/styles/globalStyles';
 
@@ -33,6 +38,8 @@ const RootStack = createNativeStackNavigator();
 
 // Bottom Tab Navigator
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -40,9 +47,9 @@ function MainTabs() {
         tabBarInactiveTintColor: Colors.light.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: 5,
+          paddingBottom: insets.bottom + 5,
           paddingTop: 5,
-          height: 60,
+          height: 50 + insets.bottom,
         },
       }}
     >
@@ -161,6 +168,21 @@ function AppStack() {
         name="Register"
         component={RegisterScreen}
         options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ForgotEmail"
+        component={ForgotEmailScreen}
+        options={{ title: 'Quên Mật Khẩu' }}
+      />
+      <Stack.Screen
+        name="VerifyCode"
+        component={VerifyCodeScreen}
+        options={{ title: 'Xác thực Mã' }}
+      />
+      <Stack.Screen
+        name="ResetPassword"
+        component={ResetPasswordScreen}
+        options={{ title: 'Tạo Mật Khẩu Mới' }}
       />
     </Stack.Navigator>
   );

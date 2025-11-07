@@ -44,6 +44,10 @@ const LoginScreen = ({ navigation }) => {
     }
   };
 
+  const handleForgotPassword = () => {
+      navigation.navigate('ForgotEmail');
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>SmartNotes+</Text>
@@ -65,6 +69,13 @@ const LoginScreen = ({ navigation }) => {
         onChangeText={setPassword}
         secureTextEntry
       />
+
+      <TouchableOpacity
+        onPress={handleForgotPassword}
+        style={styles.forgotPasswordButton}
+      >
+        <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.button}
@@ -157,6 +168,16 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: FontSizes.md,
     fontWeight: '600',
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end', // Đẩy nút sang phải
+    marginBottom: Spacing.md,
+    paddingVertical: Spacing.xs,
+  },
+  forgotPasswordText: {
+    color: Colors.light.textSecondary,
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
   },
 });
 

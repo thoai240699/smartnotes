@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const NotificationScreen = ({ navigation }) => {
   // TODO: List all scheduled notifications
@@ -12,12 +13,12 @@ const NotificationScreen = ({ navigation }) => {
   // TODO: Navigate to related note
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Quản lý thông báo</Text>
       <Text style={styles.subtitle}>
         TODO: Implement notification management
       </Text>
-    </View>
+    </SafeAreaView>
   );
 };
 

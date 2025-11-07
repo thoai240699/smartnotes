@@ -19,11 +19,12 @@ import {
   FontSizes,
   BorderRadius,
 } from '../styles/globalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ProfileScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { user, isLoggedIn } = useSelector((state) => state.user);
-  console.log("ProfileScreen: IsLoggedIn=", isLoggedIn, "User:", user);
+  //console.log("ProfileScreen: IsLoggedIn=", isLoggedIn, "User:", user);
 
   const handleLogout = () => {
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
@@ -45,7 +46,7 @@ const ProfileScreen = ({ navigation }) => {
   // Guest Mode - Not logged in
   if (!isLoggedIn || !user) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container}>
         <View style={styles.profileCard}>
           <View style={styles.avatarPlaceholder}>
             <Text style={styles.avatarText}>👤</Text>
@@ -85,13 +86,13 @@ const ProfileScreen = ({ navigation }) => {
             Đăng nhập để đồng bộ dữ liệu lên cloud.
           </Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // Logged In Mode
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.profileCard}>
         {user?.avatar ? (
           <Image source={{ uri: user.avatar }} style={styles.avatar} />
@@ -131,7 +132,7 @@ const ProfileScreen = ({ navigation }) => {
           <Text style={[styles.menuText, styles.logoutText]}>🚪 Đăng xuất</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

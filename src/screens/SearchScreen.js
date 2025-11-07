@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SearchScreen = ({ navigation }) => {
   // TODO: Search input
@@ -12,10 +13,10 @@ const SearchScreen = ({ navigation }) => {
   // TODO: Integrate with Redux search
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Tìm kiếm ghi chú</Text>
       <Text style={styles.subtitle}>TODO: Implement search functionality</Text>
-    </View>
+    </SafeAreaView>
   );
 };
 
