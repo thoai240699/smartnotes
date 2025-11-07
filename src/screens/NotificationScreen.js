@@ -354,9 +354,9 @@ const NotificationScreen = ({ navigation }) => {
             <View
               style={[
                 styles.statsContainer,
-                { 
+                {
                   backgroundColor: themeColors.card,
-                  borderBottomColor: themeColors.border 
+                  borderBottomColor: themeColors.border,
                 },
               ]}
             >
