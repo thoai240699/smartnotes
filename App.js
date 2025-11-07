@@ -10,6 +10,7 @@ import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
 import { configureNotificationHandler } from './src/utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemeProvider } from './src/contexts/ThemeContext';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -256,7 +257,9 @@ function RootNavigator() {
 export default function App() {
   return (
     <Provider store={store}>
-      <RootNavigator />
+      <ThemeProvider>
+        <RootNavigator />
+      </ThemeProvider>
     </Provider>
   );
 }
