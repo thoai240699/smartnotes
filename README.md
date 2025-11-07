@@ -49,6 +49,7 @@
 - ⚡ **Performance**: 60fps scrolling, optimized memory usage
 - 🌙 **Dark Mode**: Theme switching với persistence
 - 📊 **Statistics**: Real-time note statistics
+- 🔄 **Offline Sync**: Complete sync management với conflict resolution
 - ℹ️ **About**: App information và credits
 
 ## 🔔 Smart Notification System
@@ -285,7 +286,85 @@ npm test ProfileScreen
 
 ---
 
-## �🚀 Quick Start (5 phút)
+## 🔄 Offline Sync System
+
+### ✨ Tính năng Offline Sync
+
+SmartNotes+ có hệ thống đồng bộ offline hoàn chỉnh với khả năng phát hiện và giải quyết xung đột:
+
+#### 🎯 Core Features
+
+- ✅ **Sync Status Display**: Hiển thị trạng thái đồng bộ realtime (idle/syncing/success/error/conflict)
+- ✅ **Unsynced Notes Detection**: Phát hiện và đếm ghi chú chưa đồng bộ
+- ✅ **Manual Sync Button**: Nút đồng bộ thủ công với loading states
+- ✅ **Conflict Detection**: Thuật toán thông minh phát hiện xung đột dữ liệu
+- ✅ **Conflict Resolution UI**: Modal cho phép chọn giữ local, remote hoặc cả hai
+- ✅ **Multiple Conflict Handling**: Xử lý nhiều xung đột tuần tự
+- ✅ **Offline Mode Support**: Xử lý tốt khi không có mạng
+- ✅ **Pull-to-Refresh**: Làm mới trạng thái đồng bộ nhanh chóng
+- ✅ **Guest Mode Warning**: Cảnh báo cần đăng nhập để sync
+- ✅ **Dark Mode Support**: Tương thích với chế độ sáng/tối
+
+#### 📱 Offline Sync Screen Features
+
+**Guest Mode:**
+
+| Feature             | Description                      | Status |
+| ------------------- | -------------------------------- | ------ |
+| ⚠️ **Warning Card** | "Cần đăng nhập để đồng bộ"       | ✅     |
+| 🔐 **Login Prompt** | Alert with navigate to Login     | ✅     |
+| 📊 **Info Display** | About offline sync functionality | ✅     |
+| 🔄 **Sync Button**  | Disabled with login requirement  | ✅     |
+
+**Logged In Mode:**
+
+| Feature                   | Description                          | Status |
+| ------------------------- | ------------------------------------ | ------ |
+| 📊 **Sync Status Card**   | Display current sync state with icon | ✅     |
+| ⏰ **Last Sync Time**     | Show last successful sync timestamp  | ✅     |
+| 🔢 **Unsynced Count**     | Badge showing pending sync items     | ✅     |
+| 🔄 **Manual Sync Button** | Trigger sync with loading indicator  | ✅     |
+| ⚠️ **Error Display**      | Show sync errors in UI               | ✅     |
+| 🔃 **Pull to Refresh**    | Quick status check with gesture      | ✅     |
+| ℹ️ **Info Card**          | About sync mechanism                 | ✅     |
+
+**Conflict Resolution:**
+
+| Feature                    | Description                           | Status |
+| -------------------------- | ------------------------------------- | ------ |
+| ⚠️ **Conflict Modal**      | Beautiful modal showing both versions | ✅     |
+| 📱 **Local Version Card**  | Display device version with timestamp | ✅     |
+| ☁️ **Remote Version Card** | Display cloud version with timestamp  | ✅     |
+| 🔘 **Keep Local Button**   | Update remote with local data         | ✅     |
+| 🔘 **Keep Remote Button**  | Update local with remote data         | ✅     |
+| 🔘 **Keep Both Button**    | Create copy and keep both versions    | ✅     |
+| 🔢 **Conflict Counter**    | Show remaining conflicts              | ✅     |
+| ✅ **Success Alert**       | Confirm when all resolved             | ✅     |
+
+#### 🧪 Testing Coverage
+
+Offline Sync có **37 comprehensive tests**:
+
+```bash
+npm test OfflineSyncScreen
+# ✅ PASS 37/37 tests
+```
+
+**Test Categories:**
+
+- ✅ Rendering (5 tests)
+- ✅ Sync Status (4 tests)
+- ✅ Manual Sync (8 tests)
+- ✅ Conflict Detection (4 tests)
+- ✅ Conflict Resolution (6 tests)
+- ✅ Refresh (2 tests)
+- ✅ Theme Support (2 tests)
+- ✅ Integration (3 tests)
+- ✅ Error Handling (3 tests)
+
+---
+
+## 🚀 Quick Start (5 phút)
 
 ### 1️⃣ Cài đặt Dependencies
 
@@ -710,12 +789,19 @@ SmartNotes/
    - ✅ **About page** - App information and credits
    - ✅ **Comprehensive testing** - 37 test cases covering all features
 
-4. **Offline Sync**
+4. **Offline Sync** ✅
 
-   - 🔧 Complete `OfflineSyncScreen.js`
-   - 🔧 Sync status display
-   - 🔧 Manual sync button
-   - 🔧 Conflict resolution UI
+   - ✅ Complete `OfflineSyncScreen.js` - Full sync management UI
+   - ✅ **Sync status display** - Real-time sync state (idle/syncing/success/error/conflict)
+   - ✅ **Unsynced notes detection** - Count and display pending sync items
+   - ✅ **Manual sync button** - User-triggered sync with loading states
+   - ✅ **Conflict detection** - Smart algorithm to detect data conflicts
+   - ✅ **Conflict resolution UI** - Choose local, remote, or keep both versions
+   - ✅ **Multiple conflict handling** - Process conflicts one by one
+   - ✅ **Offline mode support** - Graceful handling when offline
+   - ✅ **Pull-to-refresh** - Quick sync status check
+   - ✅ **Guest mode warning** - Prompt to login for sync
+   - ✅ **Comprehensive testing** - 37 test cases covering all features
 
 5. **Dark Mode**
    - ✅ Implement ThemeContext - Context API with AsyncStorage
@@ -806,7 +892,46 @@ SmartNotes/
 - [ ] Open about page → See app information
 - [ ] All modals close properly
 
-#### 9️⃣ Logged In Mode
+#### 9️⃣ Offline Sync Features 🆕
+
+**Guest Mode:**
+
+- [ ] Navigate to Sync tab
+- [ ] See warning: "Chế độ khách - Cần đăng nhập để đồng bộ"
+- [ ] Sync button shows login alert
+- [ ] Click "Đăng nhập" → Navigate to Login
+
+**Logged In Mode:**
+
+- [ ] Navigate to Sync tab
+- [ ] See sync status: "Sẵn sàng" (idle state)
+- [ ] See last sync time
+- [ ] See unsynced notes count (if any)
+- [ ] Pull to refresh → Reload sync status
+- [ ] Click "Đồng bộ ngay" → Shows "Đang đồng bộ..."
+- [ ] Sync completes → Alert "Đồng bộ dữ liệu hoàn tất!"
+- [ ] Status changes to "Đã đồng bộ" (success)
+
+**Conflict Resolution:**
+
+- [ ] Create conflict (modify note on 2 devices)
+- [ ] Trigger sync → Conflict detected
+- [ ] Modal shows: "⚠️ Xung đột dữ liệu"
+- [ ] See both versions (local vs remote)
+- [ ] See modification dates
+- [ ] Choose "Giữ phiên bản này" (local) → Sync completes
+- [ ] Or choose "Giữ phiên bản này" (remote) → Sync completes
+- [ ] Or choose "Giữ cả 2 phiên bản" → Creates copy
+- [ ] Multiple conflicts → Shows "Còn X xung đột nữa"
+- [ ] Resolve all → Success alert
+
+**Error Handling:**
+
+- [ ] Offline mode → Shows warning
+- [ ] Sync error → Shows error message in UI
+- [ ] Database error → Handles gracefully
+
+#### 🔟 Logged In Mode
 
 - [ ] Profile shows avatar, name, email
 - [ ] Can create notes (synced to cloud)
@@ -837,8 +962,13 @@ npm test NotificationScreen
 npm test ProfileScreen
 # Expected: ✅ PASS 37/37 tests
 
+# Test offline sync
+npm test OfflineSyncScreen
+# Expected: ✅ PASS 37/37 tests
+
 # Test all screens
 npm test
+# Expected: ✅ PASS 127/127 tests
 ```
 
 ---
@@ -1128,6 +1258,18 @@ eas build --profile development --platform android
   - [x] About page with app information
   - [x] 37 comprehensive test cases
   - [x] ThemeContext implementation
+- [x] **Offline Sync System** 🆕
+  - [x] OfflineSyncScreen.js with full UI
+  - [x] Sync status display (idle/syncing/success/error/conflict)
+  - [x] Unsynced notes detection and count
+  - [x] Manual sync button with loading states
+  - [x] Conflict detection algorithm
+  - [x] Conflict resolution UI (keep local/remote/both)
+  - [x] Multiple conflict handling
+  - [x] Offline mode support
+  - [x] Pull-to-refresh functionality
+  - [x] 37 comprehensive test cases
+  - [x] Dark mode support
 
 ### 🔧 In Progress
 
@@ -1138,9 +1280,7 @@ eas build --profile development --platform android
 
 ### 📋 Todo
 
-- [ ] Offline sync management
-- [ ] Apply dark mode theme to all screens
-- [ ] Conflict resolution UI
+- [ ] Apply dark mode theme to all remaining screens
 - [ ] Production deployment
 - [ ] Bundle size optimization
 - [ ] Security enhancements (bcrypt, SecureStore)
