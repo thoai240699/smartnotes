@@ -10,7 +10,7 @@ import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
 import { configureNotificationHandler } from './src/utils/notificationHelper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -25,10 +25,6 @@ import SearchScreen from './src/screens/SearchScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import OfflineSyncScreen from './src/screens/OfflineSyncScreen';
-import ForgotEmailScreen from './src/screens/ForgotEmailScreen';
-import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
-import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
-
 
 import { Colors } from './src/styles/globalStyles';
 
@@ -38,18 +34,21 @@ const RootStack = createNativeStackNavigator();
 
 // Bottom Tab Navigator
 function MainTabs() {
-  const insets = useSafeAreaInsets();
+  const { isDarkMode } = useTheme();
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.light.textSecondary,
+        tabBarInactiveTintColor: themeColors.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: insets.bottom + 5,
+          paddingBottom: 5,
           paddingTop: 5,
-          height: 50 + insets.bottom,
+          height: 60,
+          backgroundColor: themeColors.card,
+          borderTopColor: themeColors.border,
         },
       }}
     >
@@ -154,7 +153,7 @@ function AppStack() {
       />
 
       <Stack.Screen
-        name="EditProfile" 
+        name="EditProfile"
         component={EditProfileScreen}
         options={{ title: 'Chỉnh sửa hồ sơ' }}
       />
@@ -169,21 +168,6 @@ function AppStack() {
         component={RegisterScreen}
         options={{ headerShown: false }}
       />
-      <Stack.Screen
-        name="ForgotEmail"
-        component={ForgotEmailScreen}
-        options={{ title: 'Quên Mật Khẩu' }}
-      />
-      <Stack.Screen
-        name="VerifyCode"
-        component={VerifyCodeScreen}
-        options={{ title: 'Xác thực Mã' }}
-      />
-      <Stack.Screen
-        name="ResetPassword"
-        component={ResetPasswordScreen}
-        options={{ title: 'Tạo Mật Khẩu Mới' }}
-      />
     </Stack.Navigator>
   );
 }
@@ -192,6 +176,7 @@ function AppStack() {
 function RootNavigator() {
   //const isSplashLoading = useSelector((state) => state.app.isLoading);
   const dispatch = useDispatch();
+  const [navigationRef, setNavigationRef] = useState(null);
 
   useEffect(() => {
     // Initialize app
@@ -200,25 +185,62 @@ function RootNavigator() {
         // Initialize SQLite database
         await initDatabase();
 
-        // Configure notifications
-        configureNotificationHandler();
+        // Configure notifications with navigation handlers
+        configureNotificationHandler(
+          // onNotificationReceived
+          (notification) => {
+            console.log(
+              'App received notification:',
+              notification.request.content.title
+            );
+          },
+          // onNotificationTapped
+          (data) => {
+            console.log('App notification tapped with data:', data);
+            handleNotificationTap(data);
+          }
+        );
 
         // Check saved authentication from AsyncStorage
-      //   const savedUser = await AsyncStorage.getItem('currentUser');
-      //   if (savedUser) {
-      //     // TODO: dispatch(setUser(JSON.parse(savedUser)));
-      //     console.log('Found saved user:', savedUser);
-      //   }
+        //   const savedUser = await AsyncStorage.getItem('currentUser');
+        //   if (savedUser) {
+        //     // TODO: dispatch(setUser(JSON.parse(savedUser)));
+        //     console.log('Found saved user:', savedUser);
+        //   }
 
-      //   setIsLoading(false);
+        //   setIsLoading(false);
       } catch (error) {
-         console.log('Error initializing app:', error);
+        console.log('Error initializing app:', error);
         // setIsLoading(false);
       }
     };
 
     initApp();
   }, [dispatch]);
+
+  // Handle notification tap navigation
+  const handleNotificationTap = (data) => {
+    if (!navigationRef) return;
+
+    try {
+      if (data.type === 'note_reminder' && data.noteId) {
+        // Navigate to the specific note
+        navigationRef.navigate('MainApp', {
+          screen: 'Main',
+          params: {
+            screen: 'HomeTab',
+          },
+        });
+
+        // Then navigate to note detail after a short delay
+        setTimeout(() => {
+          navigationRef.navigate('NoteDetail', { noteId: data.noteId });
+        }, 500);
+      }
+    } catch (error) {
+      console.log('Error handling notification tap:', error);
+    }
+  };
 
   // if (isLoading) {
   //   return <SplashScreen />;
@@ -227,14 +249,10 @@ function RootNavigator() {
   // Always start with AppStack (Main tabs), now alway start with SplashScreen
   // Login/Register accessible from Profile tab
   return (
-    <NavigationContainer>
-      <RootStack.Navigator
-        screenOptions={{ headerShown: false }}
-      >
-        
-        <RootStack.Screen name="Splash" component={SplashScreen} /> 
-        <RootStack.Screen name="MainApp" component={AppStack} />        
-            
+    <NavigationContainer ref={setNavigationRef}>
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen name="Splash" component={SplashScreen} />
+        <RootStack.Screen name="MainApp" component={AppStack} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
@@ -244,7 +262,9 @@ function RootNavigator() {
 export default function App() {
   return (
     <Provider store={store}>
-      <RootNavigator />
+      <ThemeProvider>
+        <RootNavigator />
+      </ThemeProvider>
     </Provider>
   );
 }

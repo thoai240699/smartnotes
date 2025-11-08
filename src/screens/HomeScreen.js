@@ -7,6 +7,7 @@ import {
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -16,7 +17,7 @@ import {
 } from '../redux/noteSlice';
 import NoteCard from '../components/NoteCard';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTheme } from '../contexts/ThemeContext';
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -24,9 +25,9 @@ const HomeScreen = ({ navigation }) => {
     (state) => state.note
   );
   const { currentUser, isAuthenticated } = useSelector((state) => state.user);
-  const [theme, setTheme] = useState('light');
+  const { isDarkMode } = useTheme();
 
-  const themeColors = theme === 'dark' ? Colors.dark : Colors.light;
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   useEffect(() => {
     // Load notes from local SQLite (works without login)
@@ -50,9 +51,13 @@ const HomeScreen = ({ navigation }) => {
   const categories = ['all', 'work', 'personal', 'shopping', 'health', 'other'];
 
   return (
-    <SafeAreaView
+    <View
       style={[styles.container, { backgroundColor: themeColors.background }]}
     >
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={themeColors.background}
+      />
       {/* Category Filter */}
       <View style={styles.categoryContainer}>
         <FlatList
@@ -134,7 +139,7 @@ const HomeScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.addButton} onPress={handleAddNote}>
         <Text style={styles.addButtonText}>+</Text>
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 
