@@ -1,80 +1,120 @@
 // NoteAPI.js - Note CRUD API Functions
 import axiosInstance from './axiosInstance';
 
+const USER_RESOURCE = '/users';
+
+// Hàm mô phỏng tải ảnh lên dịch vụ hosting (tạm thời không implement)
+const uploadImageToHost = async (localUri) => {
+  // Logic tải ảnh lên Imgur/Firebase Storage...
+  // Hiện tại: chỉ trả về đường dẫn cục bộ (nếu là MockAPI) hoặc default URL
+  return localUri;
+};
+
 /**
- * Get all notes for a user
- * @param {string} userId
- * @returns {Promise} Array of notes
+ * Lấy tất cả ghi chú của một User từ MockAPI.
  */
-export const getNotes = async (userId) => {
+
+export const fetchNotesByUserId = async (userId) => {
+  if (!userId) {
+    return { success: false, error: 'User ID là bắt buộc để tải ghi chú từ Cloud.' };
+  }
   try {
-    const response = await axiosInstance.get(`/notes?userId=${userId}`);
-    return response.data;
+    const url = `${USER_RESOURCE}/${userId}/notes`;
+    const response = await axiosInstance.get(url);
+
+    return { success: true, notes: response.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi tải ghi chú từ Cloud:', error);
+    return { success: false, error: error.message, notes: [] };
+  }
+};
+
+
+/**
+ * Tạo ghi chú mới trên MockAPI (POST)
+ */
+export const createCloudNote = async (noteData) => {
+  try {
+    // Tải ảnh lên Hosting và lấy URL (giả định)
+    const imageUrl = await uploadImageToHost(noteData.image);
+    const { id, syncStatus, updatedAt, ...payloadData } = noteData;
+
+    const url = `${USER_RESOURCE}/${noteData.userId}/notes`;
+    const payload = {
+      ...payloadData,
+      image: imageUrl,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const response = await axiosInstance.post(url, payload);
+    return { success: true, note: response.data };
+  } catch (error) {
+    console.error('Lỗi khi tạo ghi chú Cloud:', error);
+    return { success: false, error: error.message };
   }
 };
 
 /**
- * Get single note by ID
- * @param {string} noteId
- * @returns {Promise} Note data
+ * Cập nhật ghi chú trên MockAPI (PUT)
  */
-export const getNoteById = async (noteId) => {
+export const updateCloudNote = async (noteData) => {
   try {
-    const response = await axiosInstance.get(`/notes/${noteId}`);
-    return response.data;
+    // Tải ảnh lên Hosting và lấy URL (giả định)
+    const imageUrl = await uploadImageToHost(noteData.image);
+    const { id, syncStatus, updatedAt, ...payloadData } = noteData;
+
+    const url = `${USER_RESOURCE}/${noteData.userId}/notes/${noteData.id}`;
+
+    const payload = {
+      ...payloadData,
+      image: imageUrl,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const response = await axiosInstance.put(url, payload);
+    return { success: true, note: response.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi cập nhật ghi chú Cloud:', error);
+    return { success: false, error: error.message };
   }
 };
 
 /**
- * Create new note
- * @param {Object} noteData - Note object with all fields
- * @returns {Promise} Created note data
+ * Xóa ghi chú trên MockAPI (DELETE)
  */
-export const createNote = async (noteData) => {
+export const deleteCloudNote = async (userId, noteId) => {
   try {
-    const response = await axiosInstance.post('/notes', {
-      ...noteData,
-      createdAt: new Date().toISOString(),
-      isCompleted: false,
-    });
-    return response.data;
+    const url = `${USER_RESOURCE}/${userId}/notes/${noteId}`;
+    await axiosInstance.delete(url);
+
+    return { success: true, id: noteId };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi xóa ghi chú Cloud:', error);
+    return { success: false, error: error.message };
   }
 };
 
 /**
- * Update existing note
- * @param {string} noteId
- * @param {Object} noteData - Updated note data
- * @returns {Promise} Updated note data
- */
-export const updateNote = async (noteId, noteData) => {
+ * @description Lấy chi tiết một ghi chú từ MockAPI theo ID.
+ * * @param {string} userId - ID người dùng.
+ * @param {string} noteId - ID ghi chú.
+ * @returns {Promise<Object>} { success: boolean, note?: object, error?: string }
+*/
+export const getNoteById = async (userId, noteId) => {
+  if (!userId || !noteId) {
+    return { success: false, error: 'User ID và Note ID là bắt buộc.' };
+  }
   try {
-    const response = await axiosInstance.put(`/notes/${noteId}`, noteData);
-    return response.data;
+    const url = `${USER_RESOURCE}/${userId}/notes/${noteId}`;
+    const response = await axiosInstance.get(url);
+
+    return { success: true, note: response.data };
   } catch (error) {
-    throw error;
+    console.error('Lỗi khi tải chi tiết ghi chú từ Cloud:', error);
+    return { success: false, error: 'Không tìm thấy ghi chú trên Cloud.' };
   }
 };
 
-/**
- * Delete note
- * @param {string} noteId
- * @returns {Promise} Deleted note ID
- */
-export const deleteNote = async (noteId) => {
-  try {
-    await axiosInstance.delete(`/notes/${noteId}`);
-    return noteId;
-  } catch (error) {
-    throw error;
-  }
-};
 
 /**
  * Search notes by keyword
@@ -115,3 +155,47 @@ export const filterNotesByCategory = async (userId, category) => {
     throw error;
   }
 };
+
+/*
+/**
+ * @description Tìm kiếm/Lọc Notes bằng cách tải tất cả notes của user và lọc local.
+ * @param {string} userId
+ * @param {string} [keyword='']
+ * @param {string} [category=null]
+ * @returns {object} { success: boolean, notes?: Array, error?: string }
+ */
+/*
+export const searchAndFilterNotes = async (userId, keyword = '', category = null) => {
+  if (!userId) {
+    return { success: false, error: 'User ID là bắt buộc.' };
+  }
+
+  try {
+    let url = `${USER_RESOURCE}/${userId}/notes`;
+    let params = {};
+
+    // Lọc theo category
+    if (category && category !== 'Tat Ca') {
+      url += `?category=${category}`;
+    }
+
+    const response = await axiosInstance.get(url);
+    let notes = response.data;
+
+    // Lọc theo keyword
+    if (keyword) {
+      const lowerCaseKeyword = keyword.toLowerCase();
+      notes = notes.filter(
+        (note) =>
+          note.title?.toLowerCase().includes(lowerCaseKeyword) ||
+          note.content?.toLowerCase().includes(lowerCaseKeyword)
+      );
+    }
+
+    return { success: true, notes: notes };
+  } catch (error) {
+    console.error('Lỗi khi tìm kiếm/lọc ghi chú:', error);
+    return { success: false, error: error.message, notes: [] };
+  }
+};
+*/

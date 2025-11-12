@@ -1,5 +1,5 @@
 // CameraPicker.js - Component chọn/chụp ảnh
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Colors,
   Spacing,
@@ -18,31 +19,68 @@ import {
   BorderRadius,
 } from '../styles/globalStyles';
 
+const IMAGE_COMPRESSION_QUALITY = 0.7;
+const IMAGE_MAX_WIDTH = 1200;
+
 const CameraPicker = ({ initialImage, onImageSelect, theme = 'light' }) => {
   const isDark = theme === 'dark';
   const themeColors = isDark ? Colors.dark : Colors.light;
 
-  const [selectedImage, setSelectedImage] = useState(initialImage);
+  const [selectedImageUri, setSelectedImageUri] = useState(initialImage);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    setSelectedImageUri(initialImage);
+  }, [initialImage]);
 
   /**
    * Optimize image - resize and compress
    * @param {string} uri - Original image URI
-   * @returns {string} Optimized image URI
+   * @returns {promise<string>} Optimized image URI
    */
   const optimizeImage = async (uri) => {
     try {
-      setIsProcessing(true);
       const manipResult = await ImageManipulator.manipulateAsync(
         uri,
-        [{ resize: { width: 1200 } }], // Max width 1200px (good balance)
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+        [{ resize: { width: IMAGE_MAX_WIDTH } }],
+        { compress: IMAGE_COMPRESSION_QUALITY, format: ImageManipulator.SaveFormat.JPEG }
       );
       console.log('✅ Image optimized:', manipResult.uri);
       return manipResult.uri;
     } catch (error) {
       console.error('❌ Error optimizing image:', error);
-      return uri; // Return original if optimization fails
+      return null;
+    }
+  };
+
+  const handleImagePickAndOptimize = async (pickerFunction) => {
+    const hasPermission = await requestPermissions();
+    if (!hasPermission) {
+      Alert.alert('Lỗi', 'Cần cấp quyền truy cập camera và thư viện');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const result = await pickerFunction();
+
+      if (result && !result.canceled && result.assets && result.assets.length > 0) {
+        const originalUri = result.assets[0].uri;
+        const optimizedUri = await optimizeImage(originalUri);
+
+        if (optimizedUri) {
+          setSelectedImageUri(optimizedUri);
+          onImageSelect(optimizedUri); // Gửi URI đã tối ưu
+        } else {
+          Alert.alert('Lỗi', 'Xử lý ảnh không thành công.');
+          setSelectedImageUri(null);
+          onImageSelect(null);
+        }
+      }
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể hoàn thành thao tác: ' + error.message);
+      setSelectedImageUri(null);
+      onImageSelect(null);
     } finally {
       setIsProcessing(false);
     }
@@ -57,93 +95,66 @@ const CameraPicker = ({ initialImage, onImageSelect, theme = 'light' }) => {
     return cameraStatus === 'granted' && libraryStatus === 'granted';
   };
 
-  const pickImageFromLibrary = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) {
-      Alert.alert('Lỗi', 'Cần cấp quyền truy cập thư viện ảnh');
-      return;
-    }
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        const optimizedUri = await optimizeImage(result.assets[0].uri);
-        setSelectedImage(optimizedUri);
-        onImageSelect && onImageSelect(optimizedUri);
-      }
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể chọn ảnh');
-    }
+  const pickImageFromLibrary = () => {
+    return ImagePicker.launchImageLibraryAsync({
+      mediaTypes: [ImagePicker.MediaType.Images],
+      allowsEditing: false,
+      quality: 1,
+    });
   };
 
-  const takePhoto = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) {
-      Alert.alert('Lỗi', 'Cần cấp quyền truy cập camera');
-      return;
-    }
-
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled) {
-        const optimizedUri = await optimizeImage(result.assets[0].uri);
-        setSelectedImage(optimizedUri);
-        onImageSelect && onImageSelect(optimizedUri);
-      }
-    } catch (error) {
-      Alert.alert('Lỗi', 'Không thể chụp ảnh');
-    }
+  const takePhoto = () => {
+    return ImagePicker.launchCameraAsync({
+      allowsEditing: false,
+      quality: 1,
+    });
   };
 
   const showImageOptions = () => {
-    Alert.alert('Chọn ảnh', 'Bạn muốn chọn ảnh từ đâu?', [
-      { text: 'Thư viện', onPress: pickImageFromLibrary },
-      { text: 'Chụp ảnh', onPress: takePhoto },
-      { text: 'Hủy', style: 'cancel' },
-    ]);
+
+    if (isProcessing) return;
+
+    if (selectedImageUri) {
+      Alert.alert('Quản lý ảnh', 'Bạn muốn thay đổi hay xóa ảnh?', [
+        { text: 'Chụp ảnh mới', onPress: () => handleImagePickAndOptimize(takePhoto) },
+        { text: 'Chọn từ Thư viện', onPress: () => handleImagePickAndOptimize(pickImageFromLibrary) },
+        { text: 'Xóa ảnh', style: 'destructive', onPress: removeImage },
+        { text: 'Hủy', style: 'cancel' },
+      ]);
+    } else {
+      Alert.alert('Thêm Ảnh', 'Bạn muốn chọn ảnh từ đâu?', [
+        { text: 'Chụp ảnh', onPress: () => handleImagePickAndOptimize(takePhoto) },
+        { text: 'Thư viện', onPress: () => handleImagePickAndOptimize(pickImageFromLibrary) },
+        { text: 'Hủy', style: 'cancel' },
+      ]);
+    }
   };
 
   const removeImage = () => {
-    setSelectedImage(null);
-    onImageSelect && onImageSelect(null);
+    setSelectedImageUri(null);
+    onImageSelect(null);
   };
 
   return (
     <View style={styles.container}>
       {isProcessing && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={styles.loadingText}>Đang xử lý ảnh...</Text>
         </View>
       )}
-      {selectedImage ? (
+      {selectedImageUri ? (
         <View style={styles.imageContainer}>
-          <Image source={{ uri: selectedImage }} style={styles.image} />
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: Colors.primary }]}
-              onPress={showImageOptions}
-            >
-              <Text style={styles.buttonText}>Đổi ảnh</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: Colors.error }]}
-              onPress={removeImage}
-            >
-              <Text style={styles.buttonText}>Xóa ảnh</Text>
-            </TouchableOpacity>
-          </View>
+          <Image source={{ uri: selectedImageUri }} style={styles.image} resizeMode="cover" />
+          {/* Nút overlay để hiển thị lại options (Đổi/Xóa) */}
+          <TouchableOpacity
+            style={styles.imageEditOverlay}
+            onPress={showImageOptions}
+            disabled={isProcessing}
+          >
+            <Ionicons name="create-outline" size={30} color="#FFFFFF" />
+            <Text style={styles.overlayText}>Chỉnh sửa</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <TouchableOpacity
@@ -155,7 +166,9 @@ const CameraPicker = ({ initialImage, onImageSelect, theme = 'light' }) => {
             },
           ]}
           onPress={showImageOptions}
+          disabled={isProcessing}
         >
+          <Ionicons name="camera-outline" size={40} color={themeColors.textSecondary} />
           <Text
             style={[
               styles.placeholderText,
@@ -171,32 +184,25 @@ const CameraPicker = ({ initialImage, onImageSelect, theme = 'light' }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-  },
-  imageContainer: {
-    width: '100%',
-  },
-  image: {
-    width: '100%',
-    height: 200,
+  container: { width: '100%', marginBottom: Spacing.md, },
+  imageContainer: { width: '100%', position: 'relative' },
+  image: { width: '100%', height: 200, borderRadius: BorderRadius.lg, },
+  imageEditOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     borderRadius: BorderRadius.lg,
-    marginBottom: Spacing.sm,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: {
+  overlayText: {
     color: '#FFFFFF',
     fontSize: FontSizes.md,
     fontWeight: '600',
+    marginTop: Spacing.xs,
   },
   placeholder: {
     width: '100%',
@@ -209,6 +215,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     fontSize: FontSizes.md,
+    marginTop: Spacing.sm,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -216,6 +223,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    height: 150,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',

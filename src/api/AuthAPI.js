@@ -127,11 +127,15 @@ export const findUserByEmail = async (email) => {
       params: { email: email },
     });
     const userList = response.data;
-    if (!userList || userList.length === 0) {
+    const exactMatch = userList.find((user) => user.email === email);
+    if (!exactMatch) {
       return { success: false, error: 'Email không tồn tại trong hệ thống.' };
     }
     return { success: true, user: userList[0] };
   } catch (error) {
+    if (error.response?.status === 404 && error.response?.data === 'Not found') {
+      return { success: false, error: 'Email không tồn tại trong hệ thống.' };
+    }
     console.error('Lỗi khi tìm user theo email:', error);
     return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
   }

@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { createNoteAsync } from '../redux/noteSlice';
@@ -17,34 +18,52 @@ import CameraPicker from '../components/CameraPicker';
 import MapPicker from '../components/MapPicker';
 import NotificationScheduler from '../components/NotificationScheduler';
 import { scheduleNoteNotification } from '../utils/notificationHelper';
+import { Ionicons } from '@expo/vector-icons';
 import {
   Colors,
   Spacing,
   FontSizes,
   BorderRadius,
 } from '../styles/globalStyles';
+import {
+  CATEGORY_VALUES,
+  getCategoryLabel
+} from '../utils/categoryHelper';
 
 const AddNoteScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { currentUser } = useSelector((state) => state.user);
+  const { loading } = useSelector((state) => state.note);
+  //const { currentUser } = useSelector((state) => state.user);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('other');
-  const [image, setImage] = useState(null);
-  const [location, setLocation] = useState(null);
-  const [dueDate, setDueDate] = useState(null);
+  const [category, setCategory] = useState(CATEGORY_VALUES[1]);
+
+  const [image, setImage] = useState(null); // URI của ảnh
+  const [location, setLocation] = useState(null); // { latitude, longitude }
+
+  const [dueDate, setDueDate] = useState(null); // Date object/string cho Reminder
   const [notificationEnabled, setNotificationEnabled] = useState(false);
 
-  const categories = ['work', 'personal', 'shopping', 'health', 'other'];
+  const [showCameraPicker, setShowCameraPicker] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+
+  const toggleFeature = (feature) => {
+    if (feature === 'camera') {
+        setShowCameraPicker(prev => !prev);
+    } else if (feature === 'map') {
+        setShowMapPicker(prev => !prev);
+    };
+  }
 
   const handleSave = async () => {
+    // Validation tiêu đề
     if (!title.trim()) {
       Alert.alert('Lỗi', 'Vui lòng nhập tiêu đề');
       return;
     }
 
-    // Validate notification date
+    // Validate ngày nhắc nhở
     if (notificationEnabled && dueDate) {
       const selectedDate = new Date(dueDate);
       const now = new Date();
@@ -55,7 +74,6 @@ const AddNoteScreen = ({ navigation }) => {
     }
 
     const noteData = {
-      userId: currentUser?.id || 'default',
       title: title.trim(),
       content: content.trim(),
       category,
@@ -63,13 +81,14 @@ const AddNoteScreen = ({ navigation }) => {
       latitude: location?.latitude || null,
       longitude: location?.longitude || null,
       dueDate: notificationEnabled ? dueDate : null,
+      isCompleted: false,
     };
 
     try {
       // Create note first
       const result = await dispatch(createNoteAsync(noteData)).unwrap();
 
-      // Schedule notification if enabled
+      // Schedule notification nếu được bật
       if (notificationEnabled && dueDate && result) {
         const notificationId = await scheduleNoteNotification({
           ...result,
@@ -96,7 +115,8 @@ const AddNoteScreen = ({ navigation }) => {
       navigation.goBack();
     } catch (error) {
       console.log('Error creating note:', error);
-      Alert.alert('Lỗi', 'Không thể tạo ghi chú: ' + error.message);
+      const errorMessage = typeof error === 'string' ? error : 'Lỗi hệ thống khi lưu ghi chú.';
+      Alert.alert('Lỗi', 'Không thể tạo ghi chú: ' + errorMessage);
     }
   };
 
@@ -121,34 +141,59 @@ const AddNoteScreen = ({ navigation }) => {
         {/* Category Selection */}
         <Text style={styles.label}>Danh mục</Text>
         <View style={styles.categoryContainer}>
-          {categories.map((cat) => (
+          {CATEGORY_VALUES.filter(v => v !== 'all').map((value) => (
             <TouchableOpacity
-              key={cat}
+              key={value}
               style={[
                 styles.categoryButton,
-                category === cat && styles.categoryButtonActive,
+                category === value && styles.categoryButtonActive,
+                { marginRight: Spacing.sm, marginBottom: Spacing.sm }
               ]}
-              onPress={() => setCategory(cat)}
+              onPress={() => setCategory(value)}
             >
               <Text
                 style={[
                   styles.categoryButtonText,
-                  category === cat && styles.categoryButtonTextActive,
+                  category === value && styles.categoryButtonTextActive,
                 ]}
               >
-                {cat}
+                {getCategoryLabel(value)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Image Picker */}
-        <Text style={styles.label}>Hình ảnh</Text>
-        <CameraPicker onImageSelect={setImage} />
+        <TouchableOpacity
+          style={[styles.featureItem, styles.featureRow, showCameraPicker && styles.featureActive]}
+          onPress={() => toggleFeature('camera')}
+        >
+          <Ionicons name="camera" size={24} color={Colors.primary} />
+          <Text style={styles.featureText}>Thêm Ảnh/Media</Text>
+          {image && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
+        </TouchableOpacity>
+        {showCameraPicker && (
+          <CameraPicker
+            onImageSelect={setImage}
+            initialImage={image}
+          />
+        )}
 
         {/* Location Picker */}
-        <Text style={styles.label}>Vị trí</Text>
-        <MapPicker onLocationSelect={setLocation} />
+        <TouchableOpacity
+          style={[styles.featureItem, styles.featureRow, showMapPicker && styles.featureActive]}
+          onPress={() => toggleFeature('map')}
+        >
+          <Ionicons name="location" size={24} color={Colors.primary} />
+          <Text style={styles.featureText}>Chọn Vị trí</Text>
+          {location?.latitude && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
+        </TouchableOpacity>
+        {showMapPicker && (
+          <MapPicker
+            onLocationSelect={setLocation}
+            initialLocation={location}
+          />
+        )}
 
         {/* Notification Scheduler */}
         <NotificationScheduler
@@ -158,8 +203,12 @@ const AddNoteScreen = ({ navigation }) => {
         />
 
         {/* Save Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Lưu ghi chú</Text>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.saveButtonText}>Lưu ghi chú</Text>
+          )}
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -200,7 +249,6 @@ const styles = StyleSheet.create({
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
   categoryButton: {
@@ -223,6 +271,32 @@ const styles = StyleSheet.create({
   categoryButtonTextActive: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  featureActive: {
+      backgroundColor: Colors.light.secondary, 
+      borderColor: Colors.primary,
+  },
+  featureRow: { 
+      marginBottom: Spacing.md,
+      borderWidth: 1,
+      borderColor: Colors.light.border,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+  },
+  featureItem: {
+    flex: 1, 
+  },
+  featureText: {
+    marginLeft: Spacing.md,
+    flex: 1, 
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  checkIcon: {
+    marginLeft: Spacing.xs,
   },
   saveButton: {
     backgroundColor: Colors.primary,
