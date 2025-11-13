@@ -1,16 +1,7 @@
-<<<<<<< HEAD
-// MapPicker.js - Component chọn vị trí trên bản đồ
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
-=======
 // MapPicker.js - Component chọn vị trí (Mock version - không dùng Maps)
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, Alert } from 'react-native';
 import * as Location from 'expo-location';
->>>>>>> origin/main
 import {
   Colors,
   Spacing,

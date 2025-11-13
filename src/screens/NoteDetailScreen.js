@@ -14,12 +14,6 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteNoteAsync, updateNoteAsync } from '../redux/noteSlice';
-<<<<<<< HEAD
-import MapView, { Marker } from 'react-native-maps';
-import { useRoute, useFocusEffect } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-=======
->>>>>>> origin/main
 import {
   Colors,
   Spacing,
@@ -131,28 +125,6 @@ const NoteDetailScreen = ({ navigation }) => {
           <Image source={{ uri: note.image }} style={styles.image} resizeMode="cover" />
         )}
 
-<<<<<<< HEAD
-        {/* Map View */}
-        {hasLocation && (
-          <View style={styles.mapContainer}>
-            <Text style={styles.sectionTitle}>Vị trí</Text>
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: note.latitude,
-                longitude: note.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: note.latitude,
-                  longitude: note.longitude,
-                }}
-              />
-            </MapView>
-=======
         {note.latitude && note.longitude && (
           <View style={styles.locationContainer}>
             <Text style={styles.sectionTitle}>📍 Vị trí</Text>
@@ -164,7 +136,6 @@ const NoteDetailScreen = ({ navigation }) => {
                 Kinh độ: {note.longitude.toFixed(6)}
               </Text>
             </View>
->>>>>>> origin/main
           </View>
         )}
 
