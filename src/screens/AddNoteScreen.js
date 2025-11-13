@@ -17,6 +17,7 @@ import CameraPicker from '../components/CameraPicker';
 import MapPicker from '../components/MapPicker';
 import NotificationScheduler from '../components/NotificationScheduler';
 import { scheduleNoteNotification } from '../utils/notificationHelper';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Colors,
   Spacing,
@@ -27,6 +28,8 @@ import {
 const AddNoteScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
+  const { isDarkMode } = useTheme();
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -101,39 +104,67 @@ const AddNoteScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
       <View style={styles.content}>
         <TextInput
-          style={styles.titleInput}
+          style={[
+            styles.titleInput,
+            {
+              backgroundColor: themeColors.card,
+              color: themeColors.text,
+              borderColor: themeColors.border,
+            },
+          ]}
           placeholder="Tiêu đề"
+          placeholderTextColor={themeColors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
 
         <TextInput
-          style={styles.contentInput}
+          style={[
+            styles.contentInput,
+            {
+              backgroundColor: themeColors.card,
+              color: themeColors.text,
+              borderColor: themeColors.border,
+            },
+          ]}
           placeholder="Nội dung ghi chú..."
+          placeholderTextColor={themeColors.textSecondary}
           value={content}
           onChangeText={setContent}
           multiline
         />
 
         {/* Category Selection */}
-        <Text style={styles.label}>Danh mục</Text>
+        <Text style={[styles.label, { color: themeColors.text }]}>
+          Danh mục
+        </Text>
         <View style={styles.categoryContainer}>
           {categories.map((cat) => (
             <TouchableOpacity
               key={cat}
               style={[
                 styles.categoryButton,
-                category === cat && styles.categoryButtonActive,
+                {
+                  backgroundColor:
+                    category === cat ? Colors.primary : themeColors.card,
+                  borderColor:
+                    category === cat ? Colors.primary : themeColors.border,
+                },
               ]}
               onPress={() => setCategory(cat)}
             >
               <Text
                 style={[
                   styles.categoryButtonText,
-                  category === cat && styles.categoryButtonTextActive,
+                  {
+                    color: category === cat ? '#FFFFFF' : themeColors.text,
+                    fontWeight: category === cat ? '600' : 'normal',
+                  },
                 ]}
               >
                 {cat}
@@ -143,18 +174,27 @@ const AddNoteScreen = ({ navigation }) => {
         </View>
 
         {/* Image Picker */}
-        <Text style={styles.label}>Hình ảnh</Text>
-        <CameraPicker onImageSelect={setImage} />
+        <Text style={[styles.label, { color: themeColors.text }]}>
+          Hình ảnh
+        </Text>
+        <CameraPicker
+          onImageSelect={setImage}
+          theme={isDarkMode ? 'dark' : 'light'}
+        />
 
         {/* Location Picker */}
-        <Text style={styles.label}>Vị trí</Text>
-        <MapPicker onLocationSelect={setLocation} />
+        <Text style={[styles.label, { color: themeColors.text }]}>Vị trí</Text>
+        <MapPicker
+          onLocationSelect={setLocation}
+          theme={isDarkMode ? 'dark' : 'light'}
+        />
 
         {/* Notification Scheduler */}
         <NotificationScheduler
           onDateSelect={setDueDate}
           enabled={notificationEnabled}
           onEnabledChange={setNotificationEnabled}
+          theme={isDarkMode ? 'dark' : 'light'}
         />
 
         {/* Save Button */}
@@ -169,7 +209,6 @@ const AddNoteScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   content: {
     padding: Spacing.md,
@@ -178,18 +217,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xl,
     fontWeight: '600',
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
+    borderWidth: 1,
   },
   contentInput: {
     fontSize: FontSizes.md,
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
     minHeight: 120,
     textAlignVertical: 'top',
+    borderWidth: 1,
   },
   label: {
     fontSize: FontSizes.lg,
@@ -207,22 +246,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  categoryButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   categoryButtonText: {
     fontSize: FontSizes.sm,
-    color: Colors.light.text,
     textTransform: 'capitalize',
-  },
-  categoryButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
   },
   saveButton: {
     backgroundColor: Colors.primary,
