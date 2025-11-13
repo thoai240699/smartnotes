@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginAsync } from '../redux/userSlice';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Colors,
   Spacing,
@@ -23,6 +24,8 @@ import {
 const LoginScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.user);
+  const { isDarkMode } = useTheme();
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,7 +42,8 @@ const LoginScreen = ({ navigation }) => {
       // Đăng nhập thành công, quay lại màn hình trước đó
       navigation.replace('Main');
     } catch (err) {
-      const errorMessage = typeof err === 'string' ? err : 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const errorMessage =
+        typeof err === 'string' ? err : 'Đăng nhập thất bại. Vui lòng thử lại.';
       Alert.alert('Lỗi đăng nhập', errorMessage);
     }
   };
@@ -49,13 +53,25 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
       <Text style={styles.title}>SmartNotes+</Text>
-      <Text style={styles.subtitle}>Đăng nhập để tiếp tục</Text>
+      <Text style={[styles.subtitle, { color: themeColors.textSecondary }]}>
+        Đăng nhập để tiếp tục
+      </Text>
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            backgroundColor: themeColors.card,
+            color: themeColors.text,
+            borderColor: themeColors.border,
+          },
+        ]}
         placeholder="Email"
+        placeholderTextColor={themeColors.textSecondary}
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
@@ -63,8 +79,16 @@ const LoginScreen = ({ navigation }) => {
       />
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          {
+            backgroundColor: themeColors.card,
+            color: themeColors.text,
+            borderColor: themeColors.border,
+          },
+        ]}
         placeholder="Mật khẩu"
+        placeholderTextColor={themeColors.textSecondary}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
@@ -90,13 +114,13 @@ const LoginScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.linkText}>
+        <Text style={[styles.linkText, { color: themeColors.textSecondary }]}>
           Chưa có tài khoản? <Text style={styles.linkTextBold}>Đăng ký</Text>
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={styles.skipButton}
+        style={[styles.skipButton, { borderColor: Colors.primary }]}
         onPress={() => navigation.goBack()}
       >
         <Text style={styles.skipText}>Quay lại</Text>
@@ -110,7 +134,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: Spacing.xl,
     justifyContent: 'center',
-    backgroundColor: Colors.light.background,
   },
   title: {
     fontSize: FontSizes.xxl,
@@ -121,18 +144,15 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: FontSizes.md,
-    color: Colors.light.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.xl,
   },
   input: {
-    backgroundColor: '#FFFFFF',
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     fontSize: FontSizes.md,
     marginBottom: Spacing.md,
     borderWidth: 1,
-    borderColor: Colors.light.border,
   },
   button: {
     backgroundColor: Colors.primary,
@@ -149,7 +169,6 @@ const styles = StyleSheet.create({
   linkText: {
     textAlign: 'center',
     marginTop: Spacing.lg,
-    color: Colors.light.textSecondary,
     fontSize: FontSizes.md,
   },
   linkTextBold: {
@@ -161,7 +180,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.primary,
     alignItems: 'center',
   },
   skipText: {

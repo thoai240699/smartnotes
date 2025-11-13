@@ -24,9 +24,11 @@ const NotificationScheduler = ({
   onDateSelect,
   enabled,
   onEnabledChange,
-  theme = 'light',
+  theme,
 }) => {
-  const isDark = theme === 'dark';
+  // Xử lý theme an toàn
+  const currentTheme = theme || 'light';
+  const isDark = currentTheme === 'dark';
   const themeColors = isDark ? Colors.dark : Colors.light;
 
   const [date, setDate] = useState(
@@ -41,20 +43,19 @@ const NotificationScheduler = ({
   }, [initialDate]);
 
   const handleDateChange = (event, selectedDate) => {
-    // 1. Logic đóng picker (Android)
+    // Xử lý an toàn cho cả iOS và Android
     if (Platform.OS === 'android') {
       setShowPicker(false);
     }
 
-    if (selectedDate) {
-      if (selectedDate <= new Date()) {
-        Alert.alert('Lỗi', 'Thời gian nhắc nhở phải ở tương lai.');
-        return;
-      }
-
-      setDate(selectedDate);
-      onDateSelect(selectedDate.toISOString());
+    // Kiểm tra nếu user cancel (không chọn date)
+    if (!selectedDate) {
+      return;
     }
+
+    // Cập nhật date nếu có selectedDate
+    setDate(selectedDate);
+    onDateSelect && onDateSelect(selectedDate.toISOString());
   };
 
   const toggleEnabled = (value) => {
@@ -111,14 +112,24 @@ const NotificationScheduler = ({
           </TouchableOpacity>
 
           {showPicker && (
-            <DateTimePicker
-              value={date}
-              mode="datetime"
-              is24Hour={true}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={new Date()} // Ngày hiện tại trở đi
-            />
+            <>
+              <DateTimePicker
+                value={date}
+                mode="datetime"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={styles.doneButton}
+                  onPress={() => setShowPicker(false)}
+                >
+                  <Text style={styles.doneButtonText}>Xong</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </>
       )}
@@ -165,17 +176,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.md,
     fontWeight: '500',
   },
-  closePickerButton: {
-    alignSelf: 'flex-end',
+  doneButton: {
+    backgroundColor: Colors.primary,
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: Colors.light.border,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
   },
-  closePickerText: {
-    fontWeight: 'bold',
+  doneButtonText: {
+    color: '#FFFFFF',
     fontSize: FontSizes.md,
-  }
+    fontWeight: '600',
+  },
 });
 
 export default NotificationScheduler;

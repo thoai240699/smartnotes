@@ -188,6 +188,10 @@ const HomeScreen = ({ navigation }) => {
             <NoteCard
               note={item}
               onPress={() => handleNotePress(item)}
+<<<<<<< HEAD
+=======
+              theme={isDarkMode ? 'dark' : 'light'}
+>>>>>>> origin/main
             />
           )}
           contentContainerStyle={styles.listContent}

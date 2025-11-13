@@ -14,9 +14,12 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteNoteAsync, updateNoteAsync } from '../redux/noteSlice';
+<<<<<<< HEAD
 import MapView, { Marker } from 'react-native-maps';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+=======
+>>>>>>> origin/main
 import {
   Colors,
   Spacing,
@@ -128,6 +131,7 @@ const NoteDetailScreen = ({ navigation }) => {
           <Image source={{ uri: note.image }} style={styles.image} resizeMode="cover" />
         )}
 
+<<<<<<< HEAD
         {/* Map View */}
         {hasLocation && (
           <View style={styles.mapContainer}>
@@ -148,6 +152,19 @@ const NoteDetailScreen = ({ navigation }) => {
                 }}
               />
             </MapView>
+=======
+        {note.latitude && note.longitude && (
+          <View style={styles.locationContainer}>
+            <Text style={styles.sectionTitle}>📍 Vị trí</Text>
+            <View style={styles.locationBox}>
+              <Text style={styles.locationText}>
+                Vĩ độ: {note.latitude.toFixed(6)}
+              </Text>
+              <Text style={styles.locationText}>
+                Kinh độ: {note.longitude.toFixed(6)}
+              </Text>
+            </View>
+>>>>>>> origin/main
           </View>
         )}
 
@@ -265,7 +282,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
   },
-  mapContainer: {
+  locationContainer: {
     marginBottom: Spacing.md,
   },
   sectionTitle: {
@@ -274,10 +291,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
     color: Colors.light.text
   },
-  map: {
-    width: '100%',
-    height: 200,
-    borderRadius: BorderRadius.lg,
+  locationBox: {
+    backgroundColor: Colors.primary + '10',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+  },
+  locationText: {
+    fontSize: FontSizes.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
   },
   infoRow: {
     flexDirection: 'row',

@@ -75,13 +75,3 @@ export const isValidCoordinates = (latitude, longitude) => {
     latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180
   );
 };
-
-/**
- * Default map region (Vietnam)
- */
-export const DEFAULT_REGION = {
-  latitude: 10.8231,
-  longitude: 106.6297,
-  latitudeDelta: 0.0922,
-  longitudeDelta: 0.0421,
-};

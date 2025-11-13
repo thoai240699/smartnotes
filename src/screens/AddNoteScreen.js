@@ -18,7 +18,7 @@ import CameraPicker from '../components/CameraPicker';
 import MapPicker from '../components/MapPicker';
 import NotificationScheduler from '../components/NotificationScheduler';
 import { scheduleNoteNotification } from '../utils/notificationHelper';
-import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import {
   Colors,
   Spacing,
@@ -32,8 +32,9 @@ import {
 
 const AddNoteScreen = ({ navigation }) => {
   const dispatch = useDispatch();
-  const { loading } = useSelector((state) => state.note);
-  //const { currentUser } = useSelector((state) => state.user);
+  const { currentUser } = useSelector((state) => state.user);
+  const { isDarkMode } = useTheme();
+  const themeColors = isDarkMode ? Colors.dark : Colors.light;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -121,40 +122,67 @@ const AddNoteScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: themeColors.background }]}
+    >
       <View style={styles.content}>
         <TextInput
-          style={styles.titleInput}
+          style={[
+            styles.titleInput,
+            {
+              backgroundColor: themeColors.card,
+              color: themeColors.text,
+              borderColor: themeColors.border,
+            },
+          ]}
           placeholder="Tiêu đề"
+          placeholderTextColor={themeColors.textSecondary}
           value={title}
           onChangeText={setTitle}
         />
 
         <TextInput
-          style={styles.contentInput}
+          style={[
+            styles.contentInput,
+            {
+              backgroundColor: themeColors.card,
+              color: themeColors.text,
+              borderColor: themeColors.border,
+            },
+          ]}
           placeholder="Nội dung ghi chú..."
+          placeholderTextColor={themeColors.textSecondary}
           value={content}
           onChangeText={setContent}
           multiline
         />
 
         {/* Category Selection */}
-        <Text style={styles.label}>Danh mục</Text>
+        <Text style={[styles.label, { color: themeColors.text }]}>
+          Danh mục
+        </Text>
         <View style={styles.categoryContainer}>
           {CATEGORY_VALUES.filter(v => v !== 'all').map((value) => (
             <TouchableOpacity
               key={value}
               style={[
                 styles.categoryButton,
-                category === value && styles.categoryButtonActive,
-                { marginRight: Spacing.sm, marginBottom: Spacing.sm }
+                {
+                  backgroundColor:
+                    category === cat ? Colors.primary : themeColors.card,
+                  borderColor:
+                    category === cat ? Colors.primary : themeColors.border,
+                },
               ]}
               onPress={() => setCategory(value)}
             >
               <Text
                 style={[
                   styles.categoryButtonText,
-                  category === value && styles.categoryButtonTextActive,
+                  {
+                    color: category === cat ? '#FFFFFF' : themeColors.text,
+                    fontWeight: category === cat ? '600' : 'normal',
+                  },
                 ]}
               >
                 {getCategoryLabel(value)}
@@ -164,42 +192,27 @@ const AddNoteScreen = ({ navigation }) => {
         </View>
 
         {/* Image Picker */}
-        <TouchableOpacity
-          style={[styles.featureItem, styles.featureRow, showCameraPicker && styles.featureActive]}
-          onPress={() => toggleFeature('camera')}
-        >
-          <Ionicons name="camera" size={24} color={Colors.primary} />
-          <Text style={styles.featureText}>Thêm Ảnh/Media</Text>
-          {image && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
-        </TouchableOpacity>
-        {showCameraPicker && (
-          <CameraPicker
-            onImageSelect={setImage}
-            initialImage={image}
-          />
-        )}
+        <Text style={[styles.label, { color: themeColors.text }]}>
+          Hình ảnh
+        </Text>
+        <CameraPicker
+          onImageSelect={setImage}
+          theme={isDarkMode ? 'dark' : 'light'}
+        />
 
         {/* Location Picker */}
-        <TouchableOpacity
-          style={[styles.featureItem, styles.featureRow, showMapPicker && styles.featureActive]}
-          onPress={() => toggleFeature('map')}
-        >
-          <Ionicons name="location" size={24} color={Colors.primary} />
-          <Text style={styles.featureText}>Chọn Vị trí</Text>
-          {location?.latitude && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
-        </TouchableOpacity>
-        {showMapPicker && (
-          <MapPicker
-            onLocationSelect={setLocation}
-            initialLocation={location}
-          />
-        )}
+        <Text style={[styles.label, { color: themeColors.text }]}>Vị trí</Text>
+        <MapPicker
+          onLocationSelect={setLocation}
+          theme={isDarkMode ? 'dark' : 'light'}
+        />
 
         {/* Notification Scheduler */}
         <NotificationScheduler
           onDateSelect={setDueDate}
           enabled={notificationEnabled}
           onEnabledChange={setNotificationEnabled}
+          theme={isDarkMode ? 'dark' : 'light'}
         />
 
         {/* Save Button */}
@@ -218,7 +231,6 @@ const AddNoteScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   content: {
     padding: Spacing.md,
@@ -227,18 +239,18 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xl,
     fontWeight: '600',
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
+    borderWidth: 1,
   },
   contentInput: {
     fontSize: FontSizes.md,
     padding: Spacing.md,
-    backgroundColor: '#FFFFFF',
     borderRadius: BorderRadius.md,
     marginBottom: Spacing.md,
     minHeight: 120,
     textAlignVertical: 'top',
+    borderWidth: 1,
   },
   label: {
     fontSize: FontSizes.lg,
@@ -255,48 +267,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: BorderRadius.md,
-    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: Colors.light.border,
-  },
-  categoryButtonActive: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
   },
   categoryButtonText: {
     fontSize: FontSizes.sm,
-    color: Colors.light.text,
     textTransform: 'capitalize',
-  },
-  categoryButtonTextActive: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  featureActive: {
-      backgroundColor: Colors.light.secondary, 
-      borderColor: Colors.primary,
-  },
-  featureRow: { 
-      marginBottom: Spacing.md,
-      borderWidth: 1,
-      borderColor: Colors.light.border,
-      borderRadius: BorderRadius.md,
-      padding: Spacing.md,
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#FFFFFF',
-  },
-  featureItem: {
-    flex: 1, 
-  },
-  featureText: {
-    marginLeft: Spacing.md,
-    flex: 1, 
-    color: Colors.primary,
-    fontWeight: '600',
-  },
-  checkIcon: {
-    marginLeft: Spacing.xs,
   },
   saveButton: {
     backgroundColor: Colors.primary,
