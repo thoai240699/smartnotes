@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { deleteNoteAsync, updateNoteAsync } from '../redux/noteSlice';
-import MapView, { Marker } from 'react-native-maps';
 import {
   Colors,
   Spacing,
@@ -77,24 +76,16 @@ const NoteDetailScreen = ({ route, navigation }) => {
         )}
 
         {note.latitude && note.longitude && (
-          <View style={styles.mapContainer}>
-            <Text style={styles.sectionTitle}>Vị trí</Text>
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: note.latitude,
-                longitude: note.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              }}
-            >
-              <Marker
-                coordinate={{
-                  latitude: note.latitude,
-                  longitude: note.longitude,
-                }}
-              />
-            </MapView>
+          <View style={styles.locationContainer}>
+            <Text style={styles.sectionTitle}>📍 Vị trí</Text>
+            <View style={styles.locationBox}>
+              <Text style={styles.locationText}>
+                Vĩ độ: {note.latitude.toFixed(6)}
+              </Text>
+              <Text style={styles.locationText}>
+                Kinh độ: {note.longitude.toFixed(6)}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -186,7 +177,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.lg,
     marginBottom: Spacing.md,
   },
-  mapContainer: {
+  locationContainer: {
     marginBottom: Spacing.md,
   },
   sectionTitle: {
@@ -194,10 +185,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: Spacing.sm,
   },
-  map: {
-    width: '100%',
-    height: 200,
-    borderRadius: BorderRadius.lg,
+  locationBox: {
+    backgroundColor: Colors.primary + '10',
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.primary + '30',
+  },
+  locationText: {
+    fontSize: FontSizes.md,
+    color: Colors.light.text,
+    marginBottom: Spacing.xs,
   },
   infoRow: {
     flexDirection: 'row',

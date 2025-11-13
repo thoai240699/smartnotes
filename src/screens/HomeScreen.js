@@ -108,7 +108,7 @@ const HomeScreen = ({ navigation }) => {
             <NoteCard
               note={item}
               onPress={() => handleNotePress(item)}
-              theme={theme}
+              theme={isDarkMode ? 'dark' : 'light'}
             />
           )}
           // Performance optimizations

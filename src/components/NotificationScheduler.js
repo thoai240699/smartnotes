@@ -22,9 +22,11 @@ const NotificationScheduler = ({
   onDateSelect,
   enabled = true,
   onEnabledChange,
-  theme = 'light',
+  theme,
 }) => {
-  const isDark = theme === 'dark';
+  // Xử lý theme an toàn
+  const currentTheme = theme || 'light';
+  const isDark = currentTheme === 'dark';
   const themeColors = isDark ? Colors.dark : Colors.light;
 
   const [date, setDate] = useState(
@@ -34,14 +36,19 @@ const NotificationScheduler = ({
   const [isEnabled, setIsEnabled] = useState(enabled);
 
   const handleDateChange = (event, selectedDate) => {
+    // Xử lý an toàn cho cả iOS và Android
     if (Platform.OS === 'android') {
       setShowPicker(false);
     }
 
-    if (selectedDate) {
-      setDate(selectedDate);
-      onDateSelect && onDateSelect(selectedDate.toISOString());
+    // Kiểm tra nếu user cancel (không chọn date)
+    if (!selectedDate) {
+      return;
     }
+
+    // Cập nhật date nếu có selectedDate
+    setDate(selectedDate);
+    onDateSelect && onDateSelect(selectedDate.toISOString());
   };
 
   const toggleEnabled = (value) => {
@@ -83,13 +90,24 @@ const NotificationScheduler = ({
           </TouchableOpacity>
 
           {showPicker && (
-            <DateTimePicker
-              value={date}
-              mode="datetime"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={handleDateChange}
-              minimumDate={new Date()}
-            />
+            <>
+              <DateTimePicker
+                value={date}
+                mode="datetime"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+                minimumDate={new Date()}
+              />
+
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={styles.doneButton}
+                  onPress={() => setShowPicker(false)}
+                >
+                  <Text style={styles.doneButtonText}>Xong</Text>
+                </TouchableOpacity>
+              )}
+            </>
           )}
         </>
       )}
@@ -119,6 +137,18 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: FontSizes.md,
+  },
+  doneButton: {
+    backgroundColor: Colors.primary,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+  doneButtonText: {
+    color: '#FFFFFF',
+    fontSize: FontSizes.md,
+    fontWeight: '600',
   },
 });
 
