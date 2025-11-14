@@ -92,7 +92,7 @@ const RegisterScreen = ({ navigation }) => {
         fullname,
         email,
         password,
-        avataravatar: avatarUri || 'https://i.pravatar.cc/150?img=50',
+        avatar: avatarUri || 'https://i.pravatar.cc/150?img=50',
       };
       await dispatch(registerAsync(userData)).unwrap();
       Alert.alert('Thành công', 'Đăng ký thành công.');

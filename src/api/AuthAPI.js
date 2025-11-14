@@ -1,6 +1,8 @@
 // AuthAPI.js - Authentication API Functions
 import axiosInstance from './axiosInstance';
 
+const USER_RESOURCE = '/users';
+
 /**
  * Login user
  * @param {string} email

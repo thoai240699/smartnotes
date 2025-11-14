@@ -62,7 +62,7 @@ export const loadNotesAsync = createAsyncThunk(
  */
 export const createNoteAsync = createAsyncThunk(
   'note/createNote',
-  async (noteData, { rejectWithValue, getState }) => {
+  async (noteData, { rejectWithValue, getState, dispatch }) => {
     try {
       const userId = getState().user.userId;
       const noteToInsert = { ...noteData, userId };
@@ -71,6 +71,10 @@ export const createNoteAsync = createAsyncThunk(
 
       if (!localResult.success) {
         return rejectWithValue(localResult.error || 'Không thể lưu ghi chú local.');
+      }
+
+      if (userId) {
+        dispatch(syncNotesAsync(userId));
       }
 
       return localResult.note;
@@ -87,12 +91,17 @@ export const createNoteAsync = createAsyncThunk(
  */
 export const updateNoteAsync = createAsyncThunk(
   'note/updateNote',
-  async (noteData, { rejectWithValue }) => {
+  async (noteData, { rejectWithValue, getState, dispatch }) => {
     try {
       const localResult = await updateNoteInSQLite(noteData);
 
       if (!localResult.success) {
         return rejectWithValue(localResult.error || 'Không thể cập nhật ghi chú local.');
+      }
+
+      const userId = getState().user.userId;
+      if (userId) {
+        dispatch(syncNotesAsync(userId));
       }
 
       return localResult.note;
@@ -109,7 +118,7 @@ export const updateNoteAsync = createAsyncThunk(
  */
 export const deleteNoteAsync = createAsyncThunk(
   'note/deleteNote',
-  async (noteId, { rejectWithValue, getState }) => {
+  async (noteId, { rejectWithValue, getState, dispatch }) => {
     const userId = getState().user.userId;
 
     try {
@@ -117,13 +126,18 @@ export const deleteNoteAsync = createAsyncThunk(
       if (userId) {
         // Đã đăng nhập: Đánh dấu xóa để sync xử lý xóa Cloud sau
         localResult = await markNoteAsDeleted(noteId);
+        console.log('Đánh dấu xóa:', noteId + ' của ' + userId);
 
         if (!localResult.success) {
           return rejectWithValue(localResult.error || 'Không thể đánh dấu xóa ghi chú local.');
         }
+
+        dispatch(syncNotesAsync(userId));
+
       } else {
         // Chế độ khách: Xóa cứng local
         localResult = await deleteNoteFromSQLite(noteId);
+        console.log('Đã xóa cứng:');
 
         if (!localResult.success) {
           return rejectWithValue(localResult.error || 'Không thể xóa ghi chú local.');
@@ -199,13 +213,19 @@ export const syncNotesAsync = createAsyncThunk(
 
       // Lấy tất cả Notes từ Cloud
       const cloudNotesResult = await fetchNotesByUserId(MOCK_USER_ID);
+      if (!cloudNotesResult.success) {
+          //console.error("❌ Lỗi khi tải notes từ Cloud trong sync:", cloudNotesResult.error);
+          console.warn("Cảnh báo: Không thể tải danh sách từ Cloud. Bỏ qua bước đồng bộ Cloud -> Local và xóa local.");
+          const finalLocalNotes = await getAllNotesFromSQLite(MOCK_USER_ID);
+          return finalLocalNotes.notes;
+      }
       const cloudNotes = cloudNotesResult.notes;
 
       for (const cloudNote of cloudNotes) {
         await upsertNoteFromCloud(cloudNote);
       }
 
-      const cloudNoteIds = cloudNotes.map(note => note.id);
+      const cloudNoteIds = Array.isArray(cloudNotes) ? cloudNotes.map(note => note.id) : [];
       await cleanLocalDeletedNotes(cloudNoteIds, MOCK_USER_ID);
 
       const finalLocalNotes = await getAllNotesFromSQLite(MOCK_USER_ID);
@@ -282,22 +302,26 @@ const noteSlice = createSlice({
     builder
       // Load Notes
       .addCase(loadNotesAsync.pending, (state) => {
+        console.log('NOTE_LOADING: loadNotesAsync.pending -> true');
         state.loading = true;
         state.error = null;
       })
       .addCase(loadNotesAsync.fulfilled, (state, action) => {
+        console.log('NOTE_LOADING: loadNotesAsync.fulfilled -> false');
         state.loading = false;
         state.notes = action.payload; // Cập nhật danh sách notes
         applyFilters(state);
         state.isNotesLoaded = true;
       })
       .addCase(loadNotesAsync.rejected, (state, action) => {
+        console.log('NOTE_LOADING: loadNotesAsync.rejected -> false');
         state.loading = false;
         state.error = action.payload;
         state.isNotesLoaded = true;
       })
       // Create Note
       .addCase(createNoteAsync.fulfilled, (state, action) => {
+        console.log('NOTE_LOADING: createNoteAsync.fulfilled (Không set false)');
         state.notes.unshift(action.payload);
         applyFilters(state);
       })

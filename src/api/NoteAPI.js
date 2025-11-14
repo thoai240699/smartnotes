@@ -11,9 +11,8 @@ const uploadImageToHost = async (localUri) => {
 };
 
 /**
- * Lấy tất cả ghi chú của một User từ MockAPI.
+ * @description Lấy tất cả ghi chú của một User từ MockAPI (GET)
  */
-
 export const fetchNotesByUserId = async (userId) => {
   if (!userId) {
     return { success: false, error: 'User ID là bắt buộc để tải ghi chú từ Cloud.' };
@@ -24,6 +23,14 @@ export const fetchNotesByUserId = async (userId) => {
 
     return { success: true, notes: response.data };
   } catch (error) {
+    if (
+      error.response &&
+      error.response.status === 404 &&
+      error.response.data === "Not found" 
+    ) {
+      console.log('Thông báo: Không tìm thấy notes trên cloud (404 - Not Found), trả về danh sách rỗng.');
+      return { success: true, notes: [] };
+    }
     console.error('Lỗi khi tải ghi chú từ Cloud:', error);
     return { success: false, error: error.message, notes: [] };
   }
@@ -31,19 +38,20 @@ export const fetchNotesByUserId = async (userId) => {
 
 
 /**
- * Tạo ghi chú mới trên MockAPI (POST)
+ * @description Tạo ghi chú mới trên MockAPI (POST)
  */
 export const createCloudNote = async (noteData) => {
   try {
     // Tải ảnh lên Hosting và lấy URL (giả định)
     const imageUrl = await uploadImageToHost(noteData.image);
-    const { id, syncStatus, updatedAt, ...payloadData } = noteData;
+    
+    // Loại bỏ các trường không cần thiết (id local, syncStatus)
+    const { id, syncStatus, ...payloadData } = noteData;
 
     const url = `${USER_RESOURCE}/${noteData.userId}/notes`;
     const payload = {
       ...payloadData,
       image: imageUrl,
-      updatedAt: new Date().toISOString(),
     };
 
     const response = await axiosInstance.post(url, payload);
@@ -55,20 +63,23 @@ export const createCloudNote = async (noteData) => {
 };
 
 /**
- * Cập nhật ghi chú trên MockAPI (PUT)
+ * @description Cập nhật ghi chú trên MockAPI (PUT)
  */
 export const updateCloudNote = async (noteData) => {
   try {
     // Tải ảnh lên Hosting và lấy URL (giả định)
     const imageUrl = await uploadImageToHost(noteData.image);
-    const { id, syncStatus, updatedAt, ...payloadData } = noteData;
+    
+    // *** SỬA LỖI LOGIC: ***
+    // Chỉ loại bỏ 'id' và 'syncStatus', giữ lại 'updatedAt'
+    const { id, syncStatus, ...payloadData } = noteData;
 
     const url = `${USER_RESOURCE}/${noteData.userId}/notes/${noteData.id}`;
 
     const payload = {
-      ...payloadData,
+      ...payloadData, 
       image: imageUrl,
-      updatedAt: new Date().toISOString(),
+      
     };
 
     const response = await axiosInstance.put(url, payload);
@@ -80,7 +91,7 @@ export const updateCloudNote = async (noteData) => {
 };
 
 /**
- * Xóa ghi chú trên MockAPI (DELETE)
+ * @description Xóa ghi chú trên MockAPI (DELETE)
  */
 export const deleteCloudNote = async (userId, noteId) => {
   try {
