@@ -13,9 +13,17 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "config": {
+        "googleMapsApiKey": "AIzaSyDJIWbD_MMIyQIIMh0T8CQYTn790shBInI"
+      },
       "supportsTablet": true
     },
     "android": {
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDJIWbD_MMIyQIIMh0T8CQYTn790shBInI"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

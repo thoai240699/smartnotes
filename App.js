@@ -1,5 +1,5 @@
 // App.js - Main Application Entry Point
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -198,7 +198,8 @@ function AppStack() {
 function RootNavigator() {
   //const isSplashLoading = useSelector((state) => state.app.isLoading);
   const dispatch = useDispatch();
-  const [navigationRef, setNavigationRef] = useState(null);
+  //const [navigationRef, setNavigationRef] = useState(null);
+  const navigationRef = useRef(null); 
 
   useEffect(() => {
     // Initialize app
@@ -242,12 +243,13 @@ function RootNavigator() {
 
   // Handle notification tap navigation
   const handleNotificationTap = (data) => {
-    if (!navigationRef) return;
+    // if (!navigationRef) return;
+    if (!navigationRef.current) return; 
 
     try {
       if (data.type === 'note_reminder' && data.noteId) {
         // Navigate to the specific note
-        navigationRef.navigate('MainApp', {
+        navigationRef.current?.navigate('MainApp', {
           screen: 'Main',
           params: {
             screen: 'HomeTab',
@@ -256,7 +258,7 @@ function RootNavigator() {
 
         // Then navigate to note detail after a short delay
         setTimeout(() => {
-          navigationRef.navigate('NoteDetail', { noteId: data.noteId });
+          navigationRef.current?.navigate('NoteDetail', { noteId: data.noteId });
         }, 500);
       }
     } catch (error) {
@@ -271,7 +273,7 @@ function RootNavigator() {
   // Always start with AppStack (Main tabs), now alway start with SplashScreen
   // Login/Register accessible from Profile tab
   return (
-    <NavigationContainer ref={setNavigationRef}>
+    <NavigationContainer ref={navigationRef}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         <RootStack.Screen name="Splash" component={SplashScreen} />
         <RootStack.Screen name="MainApp" component={AppStack} />

@@ -21,14 +21,16 @@ import {
     CATEGORY_VALUES,
     getCategoryLabel
 } from '../utils/categoryHelper';
+import CameraPicker from '../components/CameraPicker';
+import MapPicker from '../components/MapPicker';
+import NotificationScheduler from '../components/NotificationScheduler';
+import { scheduleNoteNotification } from '../utils/notificationHelper';
+import { useTheme } from '../contexts/ThemeContext'; 
 
 const EditNoteScreen = ({ navigation }) => {
-  // TODO: Get note from route.params
-  // TODO: Pre-fill form with existing note data
-  // TODO: Call updateNoteAsync on save
-
   const route = useRoute();
   const dispatch = useDispatch();
+  const { isDarkMode } = useTheme(); 
   const { noteId } = route.params;
 
   const existingNote = useSelector(state =>
@@ -47,17 +49,37 @@ const EditNoteScreen = ({ navigation }) => {
   const [content, setContent] = useState(existingNote.content || '');
   const [category, setCategory] = useState(existingNote.category || CATEGORY_VALUES[1]);
   const [imageUri, setImageUri] = useState(existingNote.image || null);
-  const [location, setLocation] = useState({
-    latitude: existingNote.latitude,
-    longitude: existingNote.longitude
-  });
+  const [location, setLocation] = useState(
+    existingNote.latitude && existingNote.longitude
+      ? { latitude: existingNote.latitude, longitude: existingNote.longitude }
+      : null
+  );
+  
   const [dueDate, setDueDate] = useState(existingNote.dueDate || null);
   const [notificationEnabled, setNotificationEnabled] = useState(!!existingNote.dueDate);
+  const [showCameraPicker, setShowCameraPicker] = useState(!!existingNote.image);
+  const [showMapPicker, setShowMapPicker] = useState(!!(existingNote.latitude && existingNote.longitude));
+
+  const toggleFeature = (feature) => {
+    if (feature === 'camera') {
+        if (!showCameraPicker && imageUri) {
+          setShowCameraPicker(true);
+        } else {
+          setShowCameraPicker(prev => !prev);
+        }
+    } else if (feature === 'map') {
+        // Tương tự cho map
+        if (!showMapPicker && location) {
+          setShowMapPicker(true);
+        } else {
+          setShowMapPicker(prev => !prev);
+        }
+    };
+  }
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: 'Chỉnh sửa ghi chú',
-      headerRight: () => null,
     });
   }, [navigation]);
 
@@ -67,6 +89,15 @@ const EditNoteScreen = ({ navigation }) => {
       return;
     }
 
+    if (notificationEnabled && dueDate) {
+      const selectedDate = new Date(dueDate);
+      const now = new Date();
+      if (selectedDate <= now) {
+        Alert.alert('Lỗi', 'Thời gian nhắc nhở phải ở tương lai');
+        return;
+      }
+    }
+
     const updatedData = {
       ...existingNote,
       id: existingNote.id,
@@ -74,16 +105,22 @@ const EditNoteScreen = ({ navigation }) => {
       content: content.trim(),
       category: category,
       image: imageUri,
-      latitude: location?.latitude,
-      longitude: location?.longitude,
+      latitude: location?.latitude || null,
+      longitude: location?.longitude || null,
       dueDate: notificationEnabled ? dueDate : null,
+      // isCompleted giữ nguyên giá trị cũ
+      isCompleted: existingNote.isCompleted, 
     };
 
     try {
       await dispatch(updateNoteAsync(updatedData)).unwrap();
+      if (notificationEnabled && dueDate) {
+        await scheduleNoteNotification({ ...updatedData, dueDate });
+      } else {
+        // (Nâng cao: Cần huỷ thông báo nếu người dùng tắt)
+      }
 
       Alert.alert('Thành công', 'Ghi chú đã được cập nhật.');
-
       navigation.goBack();
 
     } catch (err) {
@@ -92,70 +129,95 @@ const EditNoteScreen = ({ navigation }) => {
     }
   };
 
-  const openCameraPicker = () => Alert.alert('Tính năng', 'Mở CameraPicker...');
-  const openMapPicker = () => Alert.alert('Tính năng', 'Mở MapPicker...');
-  const openReminderPicker = () => Alert.alert('Tính năng', 'Mở Reminder Picker...');
-
   return (
     <View style={styles.fullScreenContainer}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-
-        {/* Input Tiêu đề */}
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
         <TextInput
-          style={[styles.input, styles.titleInput]}
-          placeholder="Tiêu đề ghi chú (Bắt buộc)"
+          style={styles.titleInput}
+          placeholder="Tiêu đề"
           value={title}
           onChangeText={setTitle}
         />
 
-        {/* Input Nội dung */}
         <TextInput
-          style={[styles.input, styles.contentInput]}
-          placeholder="Nội dung ghi chú"
+          style={styles.contentInput}
+          placeholder="Nội dung ghi chú..."
           value={content}
           onChangeText={setContent}
           multiline
         />
 
-        {/* Chọn Danh mục */}
-        <Text style={styles.sectionTitle}>Phân loại</Text>
+        {/* Category Selection */}
+        <Text style={styles.label}>Danh mục</Text>
         <View style={styles.categoryContainer}>
           {CATEGORY_VALUES.filter(v => v !== 'all').map((value) => (
             <TouchableOpacity
               key={value}
               style={[
                 styles.categoryButton,
-                category === value && styles.categoryActive,
+                category === value && styles.categoryButtonActive,
                 { marginRight: Spacing.sm, marginBottom: Spacing.sm }
               ]}
               onPress={() => setCategory(value)}
             >
-              <Text style={[styles.categoryText, category === value && styles.categoryTextActive]}>{getCategoryLabel(value)}</Text>
+              <Text
+                style={[
+                  styles.categoryButtonText,
+                  category === value && styles.categoryButtonTextActive,
+                ]}
+              >
+                {getCategoryLabel(value)}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Thêm Tính năng (Media/Location/Reminder) */}
-        <Text style={styles.sectionTitle}>Tính năng bổ sung</Text>
-        <View style={styles.featureContainer}>
-          <TouchableOpacity style={styles.featureItem} onPress={openCameraPicker}>
-            <Ionicons name="camera" size={24} color={Colors.primary} />
-            <Text style={styles.featureText}>Ảnh/Media</Text>
-            {imageUri && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
-          </TouchableOpacity>
+        {/* Image Picker */}
+        <TouchableOpacity
+          style={[styles.featureItem, styles.featureRow, showCameraPicker && styles.featureActive]}
+          onPress={() => toggleFeature('camera')}
+        >
+          <Ionicons name="camera" size={24} color={Colors.primary} />
+          <Text style={styles.featureText}>Chỉnh sửa Ảnh</Text>
+          {imageUri && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
+        </TouchableOpacity>
+        {showCameraPicker && (
+          <CameraPicker
+            onImageSelect={setImageUri} // Cập nhật state imageUri
+            initialImage={imageUri}   // Truyền ảnh hiện có
+            theme={isDarkMode ? 'dark' : 'light'}
+          />
+        )}
 
-          <TouchableOpacity style={styles.featureItem} onPress={openMapPicker}>
-            <Ionicons name="location" size={24} color={Colors.primary} />
-            <Text style={styles.featureText}>Vị trí</Text>
-            {location?.latitude && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
-          </TouchableOpacity>
+        {/* Location Picker */}
+        <TouchableOpacity
+          style={[styles.featureItem, styles.featureRow, showMapPicker && styles.featureActive]}
+          onPress={() => toggleFeature('map')}
+        >
+          <Ionicons name="location" size={24} color={Colors.primary} />
+          <Text style={styles.featureText}>Chỉnh sửa Vị trí</Text>
+          {location?.latitude && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
+        </TouchableOpacity>
+        {showMapPicker && (
+          <MapPicker
+            onLocationSelect={setLocation} // Cập nhật state location
+            initialLocation={location}  // Truyền vị trí hiện có
+            theme={isDarkMode ? 'dark' : 'light'}
+          />
+        )}
 
-          <TouchableOpacity style={styles.featureItem} onPress={openReminderPicker}>
-            <Ionicons name="alarm" size={24} color={Colors.primary} />
-            <Text style={styles.featureText}>Nhắc nhở</Text>
-            {dueDate && <Ionicons name="checkmark-circle" size={16} color={Colors.success} style={styles.checkIcon} />}
-          </TouchableOpacity>
-        </View>
+        {/* Notification Scheduler */}
+        <NotificationScheduler
+          onDateSelect={setDueDate}
+          enabled={notificationEnabled}
+          onEnabledChange={setNotificationEnabled}
+          initialDate={dueDate} // Truyền ngày hẹn hiện có
+          theme={isDarkMode ? 'dark' : 'light'}
+        />
 
       </ScrollView>
 
@@ -176,101 +238,116 @@ const EditNoteScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    fullScreenContainer: {
-        flex: 1,
-        backgroundColor: Colors.light.background,
-    },
-    scrollContainer: {
-        padding: Spacing.md,
-        paddingBottom: 100, 
-    },
-    input: {
-        backgroundColor: '#FFFFFF',
-        padding: Spacing.md,
-        borderRadius: BorderRadius.md,
-        fontSize: FontSizes.md,
-        marginBottom: Spacing.md,
-        borderWidth: 1,
-        borderColor: Colors.light.border,
-    },
-    titleInput: {
-        fontSize: FontSizes.lg,
-        fontWeight: 'bold',
-        height: 60,
-    },
-    contentInput: {
-        minHeight: 150,
-        textAlignVertical: 'top',
-    },
-    sectionTitle: {
-        fontSize: FontSizes.md,
-        fontWeight: '600',
-        color: Colors.light.textSecondary,
-        marginTop: Spacing.md,
-        marginBottom: Spacing.sm,
-    },
-    categoryContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        marginBottom: Spacing.md,
-    },
-    categoryButton: {
-        paddingHorizontal: Spacing.md,
-        paddingVertical: Spacing.sm,
-        borderRadius: BorderRadius.lg,
-        backgroundColor: Colors.light.secondary,
-    },
-    categoryActive: {
-        backgroundColor: Colors.primary,
-    },
-    categoryText: {
-        color: Colors.light.text,
-        fontSize: FontSizes.sm,
-        fontWeight: '500',
-    },
-    categoryTextActive: {
-        color: '#FFFFFF',
-    },
-    featureContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: Spacing.sm,
-        borderTopWidth: 1,
-        borderTopColor: Colors.light.border,
-    },
-    featureItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: Spacing.sm,
-        borderRadius: BorderRadius.md,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: Colors.light.border,
-    },
-    featureText: {
-        marginLeft: Spacing.xs,
-        marginRight: Spacing.xs,
-        color: Colors.primary,
-        fontWeight: '600',
-    },
-    checkIcon: {
-        marginLeft: Spacing.xs,
-    },
-    saveButton: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: Colors.primary, 
-        padding: Spacing.lg,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    saveButtonText: {
-        color: '#FFFFFF',
-        fontSize: FontSizes.lg,
-        fontWeight: 'bold',
-    },
+  fullScreenContainer: {
+    flex: 1,
+    backgroundColor: Colors.light.background,
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    padding: Spacing.md,
+    paddingBottom: 100, // Thêm padding dưới để không bị che bởi nút Save
+  },
+  titleInput: {
+    fontSize: FontSizes.xl,
+    fontWeight: '600',
+    padding: Spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  contentInput: {
+    fontSize: FontSizes.md,
+    padding: Spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.md,
+    minHeight: 120,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  label: {
+    fontSize: FontSizes.lg,
+    fontWeight: '600',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    color: Colors.light.text,
+  },
+  categoryContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: Spacing.md,
+  },
+  categoryButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: Colors.light.border,
+  },
+  categoryButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  categoryButtonText: {
+    fontSize: FontSizes.sm,
+    color: Colors.light.text,
+    textTransform: 'capitalize',
+  },
+  categoryButtonTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  featureActive: {
+      backgroundColor: Colors.light.secondary, 
+      borderColor: Colors.primary,
+      borderWidth: 1,
+  },
+  featureRow: { 
+      marginBottom: Spacing.md,
+      borderWidth: 1,
+      borderColor: Colors.light.border,
+      borderRadius: BorderRadius.md,
+      padding: Spacing.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FFFFFF',
+  },
+  featureItem: {
+    flex: 1, 
+  },
+  featureText: {
+    marginLeft: Spacing.md,
+    flex: 1, 
+    color: Colors.primary,
+    fontWeight: '600',
+    fontSize: FontSizes.md,
+  },
+  checkIcon: {
+    marginLeft: Spacing.xs,
+  },
+  saveButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.primary, 
+    padding: Spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: 1,
+    borderTopColor: Colors.light.border,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: FontSizes.lg,
+    fontWeight: 'bold',
+  },
 });
 
 export default EditNoteScreen;

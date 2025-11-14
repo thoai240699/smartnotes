@@ -1,5 +1,5 @@
 // HomeScreen.js - Màn hình chính hiển thị danh sách ghi chú
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   StatusBar,
   Platform,
   ScrollView,
+  RefreshControl,
+  AppState,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { useFocusEffect } from '@react-navigation/native';
@@ -19,11 +21,13 @@ import {
   syncNotesAsync,
   setSearchQuery,
   setFilterCategory,
+  resetSyncError,
 } from '../redux/noteSlice';
 import NoteCard from '../components/NoteCard';
 import { Colors, Spacing, FontSizes } from '../styles/globalStyles';
 import { useTheme } from '../contexts/ThemeContext';
 import { CATEGORY_VALUES, getCategoryLabel } from '../utils/categoryHelper';
+import { updateGuestNotesToLoggedInUser } from '../db/database';
 
 const NOTE_CARD_HEIGHT = 180;
 
@@ -42,75 +46,121 @@ const HomeScreen = ({ navigation }) => {
   } = useSelector((state) => state.note);
 
   const { isLoggedIn, userId } = useSelector((state) => state.user);
-  const dataToDisplay = filterCategory === 'all' ? notes : filteredNotes;
-
-   const [lastSyncTriggered, setLastSyncTriggered] = useState(0);
-
-   const checkAndSync = useCallback(() => {
-    const userIdentifier = userId || null;
-    const hasPendingNotes = notes.some(
-      note => note.syncStatus === 'pending' || note.syncStatus === 'deleted-pending'
-    );
-    const now = Date.now();
-
-    // Kiểm tra điều kiện và thời gian giữa các lần gọi (ví dụ, tối thiểu 1 giây)
-    if (isLoggedIn && isNotesLoaded && !syncing && hasPendingNotes && !syncHasError && (now - lastSyncTriggered) > 1000) {
-        console.log('--- HOME SCREEN SYNC TRIGGERED (checkAndSync) ---');
-        console.log('ACTION: Dispatching syncNotesAsync...');
-        dispatch(syncNotesAsync(userIdentifier));
-        setLastSyncTriggered(now); // Cập nhật thời gian cuối cùng gọi sync
-    } else {
-        if (!isLoggedIn || !isNotesLoaded || syncing || !hasPendingNotes || syncHasError) {
-            console.log('SYNC CHECK (checkAndSync): Bỏ qua - Điều kiện không đủ.');
-            console.log(`  - isLoggedIn: ${isLoggedIn}`);
-            console.log(`  - isNotesLoaded: ${isNotesLoaded}`);
-            console.log(`  - syncing: ${syncing}`);
-            console.log(`  - hasPendingNotes: ${hasPendingNotes}`);
-            console.log(`  - syncHasError: ${syncHasError}`);
-        } else if ((now - lastSyncTriggered) <= 1000) {
-            console.log('SYNC CHECK (checkAndSync): Bỏ qua - Gọi quá nhanh.');
-        }
-    }
-  }, [isLoggedIn, isNotesLoaded, syncing, syncHasError, notes, userId, dispatch, lastSyncTriggered]);
-
+  const syncingRef = useRef(syncing);
+  const isLoggedInRef = useRef(isLoggedIn);
+  const userIdRef = useRef(userId);
 
   useEffect(() => {
-    const userIdentifier = userId || null;
-    const hasPendingNotes = notes.some(
-      note => note.syncStatus === 'pending'
-    );
+    syncingRef.current = syncing;
+    isLoggedInRef.current = isLoggedIn;
+    userIdRef.current = userId;
+  }, [syncing, isLoggedIn, userId]);
 
-    if (isLoggedIn && isNotesLoaded && !syncing && hasPendingNotes && !syncHasError) {
-      console.log('--- HOME SCREEN SYNC TRIGGERED (useEffect) ---');
-      console.log('ACTION: Dispatching syncNotesAsync...');
-      dispatch(syncNotesAsync(userIdentifier));
-    } else if (isLoggedIn && isNotesLoaded && hasPendingNotes && syncHasError) {
-      console.log('SYNC CHECK: Có lỗi trước đó hoặc không có pending notes, bỏ qua.');
-      console.log(`  - Syncing: ${syncing}`);
-      console.log(`  - Sync Error: ${syncHasError}`);
-      console.log(`  - Has Pending Notes: ${hasPendingNotes}`);
+  const prevUserId = useRef();
+  const appState = useRef(AppState.currentState);
+  const dataToDisplay = filterCategory === 'all' ? notes : filteredNotes;
+
+  useEffect(() => {
+    const currentState = AppState.currentState;
+    if (currentState === 'active') {
+      console.log('App vừa mở, chờ 10 giây để đồng bộ...');
+
+      const timer = setTimeout(() => {
+        if (isLoggedInRef.current && !syncingRef.current) {
+          console.log('Timeout 10s: Kích hoạt đồng bộ...');
+          const userIdentifier = userIdRef.current || null;
+          if (userIdentifier) { 
+            dispatch(syncNotesAsync(userIdentifier));
+          }
+        } else {
+          console.log('Timeout 10s: Bỏ qua (đang sync hoặc chưa đăng nhập).');
+        }
+      }, 10000);
+      return () => clearTimeout(timer);
     }
-  }, [isLoggedIn, isNotesLoaded, syncing, syncHasError, notes, userId, dispatch]);
+  }, [dispatch]);
 
+  useEffect(() => {
+
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      console.log('Trạng thái app thay đổi:', appState.current, '→', nextAppState);
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        console.log('App đã quay lại, kích hoạt đồng bộ tự động...');
+
+        if (isLoggedIn && !syncing) {
+          const userIdentifier = userId || null;
+          dispatch(syncNotesAsync(userIdentifier));
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [dispatch, isLoggedIn, userId, syncing]);
 
   useFocusEffect(
     useCallback(() => {
+      console.log('HomeScreen được focus');
       const userIdentifier = userId || null;
-
-      if (!isNotesLoaded && !loading) {
-        console.log('--- HOMESCREEN FOCUS (INIT) ---');
-        console.log('STATUS: [INIT] Notes chưa được tải lần đầu.');
-        console.log('ACTION: Dispatching loadNotesAsync...');
-        dispatch(loadNotesAsync(userIdentifier));
-      } else {
-        console.log('--- HOMESCREEN FOCUS (REFRESH UI) ---');
-        console.log('STATUS: Notes đã được tải, có thể làm mới giao diện.');
+      const hasUserChanged = prevUserId.current !== userIdentifier;
+      const loadAndMigrateData = async () => {
+        try {
+          let didMigrate = false;
+          console.log(hasUserChanged, prevUserId.current, userIdentifier);
+          if (hasUserChanged && !prevUserId.current && userIdentifier) {
+            console.log('Phát hiện Đăng nhập: Đang di chuyển Guest Notes...');
+            prevUserId.current = userIdentifier; //
+            await updateGuestNotesToLoggedInUser(userIdentifier);
+            console.log('Di chuyển hoàn tất.');
+            didMigrate = true;
+          }
+          if (!isNotesLoaded || hasUserChanged) {
+            console.log(`Bắt đầu tải notes cho user: ${userIdentifier} (Lý do: ${hasUserChanged ? 'User changed' : 'Initial load'})`);
+            if (!didMigrate) {
+                prevUserId.current = userIdentifier;
+            }
+            await dispatch(loadNotesAsync(userIdentifier)).unwrap();
+          }
+          if (didMigrate && userIdentifier) {
+            console.log('Kích hoạt sync ngay sau khi nhận nuôi notes...');
+            dispatch(syncNotesAsync(userIdentifier));
+          }
+          prevUserId.current = userIdentifier;
+        } catch (error) {
+          console.error("Lỗi trong useFocusEffect (load/migrate):", error);
+        }
+      };
+      console.log('trạng thái loading: ', loading);
+      if (!loading) {
+        loadAndMigrateData();
       }
-    }, [dispatch, userId, isNotesLoaded, loading]));
+    }, [dispatch, userId, isNotesLoaded, loading])
+  );
+
+  const handleRefresh = useCallback(async () => {
+    const userIdentifier = userId || null;
+    console.log('--- Kích hoạt Manual-Sync (Pull-to-Refresh) ---');
+
+    if (syncHasError) {
+      dispatch(resetSyncError());
+    }
+
+    await dispatch(loadNotesAsync(userIdentifier)).unwrap();;
+    if (isLoggedIn) {
+      dispatch(syncNotesAsync(userIdentifier));
+    }
+  }, [dispatch, userId, isLoggedIn, syncHasError]);
+
 
   const handleNotePress = (note) => {
     navigation.navigate('NoteDetail', { noteId: note.id });
   };
+
 
   const handleAddNote = () => {
     navigation.navigate('AddNote');
@@ -122,7 +172,18 @@ const HomeScreen = ({ navigation }) => {
     index,
   });
 
-  if (loading) { 
+  const renderEmptyComponent = () => (
+    <View style={styles.emptyContainer}>
+      <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
+        {filterCategory === 'all' ? 'Chưa có ghi chú nào' : `Không có ghi chú trong "${getCategoryLabel(filterCategory)}"`}
+      </Text>
+      {filterCategory === 'all' &&
+        <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>Bấm "+" để tạo ghi chú đầu tiên.</Text>}
+    </View>
+  );
+
+
+  if (loading && !isNotesLoaded) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size="large" color={Colors.primary} />
@@ -172,37 +233,32 @@ const HomeScreen = ({ navigation }) => {
       </View>
 
       {/* Notes List */}
-      {dataToDisplay.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>
-            {filterCategory === 'all' ? 'Chưa có ghi chú nào' : `Không có ghi chú trong "${getCategoryLabel(filterCategory)}"`}
-          </Text>
-          {filterCategory === 'all' &&
-            <Text style={[styles.loadingText, { color: themeColors.textSecondary }]}>Bấm "+" để tạo ghi chú đầu tiên.</Text>}
-        </View>
-      ) : (
-        <FlatList
-          data={dataToDisplay}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <NoteCard
-              note={item}
-              onPress={() => handleNotePress(item)}
-<<<<<<< HEAD
-=======
-              theme={isDarkMode ? 'dark' : 'light'}
->>>>>>> origin/main
-            />
-          )}
-          contentContainerStyle={styles.listContent}
-          initialNumToRender={10}
-          maxToRenderPerBatch={10}
-          windowSize={5}
-          removeClippedSubviews={Platform.OS === 'android'}
-          getItemLayout={getItemLayout}
-        />
-      )
-      }
+      <FlatList
+        data={dataToDisplay}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <NoteCard
+            note={item}
+            onPress={() => handleNotePress(item)}
+            isDark={isDarkMode}
+          />
+        )}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={renderEmptyComponent}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={Platform.OS === 'android'}
+        getItemLayout={getItemLayout}
+        refreshControl={
+          <RefreshControl
+            refreshing={syncing}
+            onRefresh={handleRefresh}
+            colors={[Colors.primary]}
+            tintColor={Colors.primary}
+          />
+        }
+      />
 
       {/* Add Button */}
       <TouchableOpacity
@@ -214,10 +270,12 @@ const HomeScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       {/* Sync Indicator */}
-      {syncing && ( // Hiển thị indicator nếu đang sync
+      {(loading || syncing) && (
         <View style={styles.syncIndicator}>
           <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 5 }} />
-          <Text style={styles.syncText}>Đang đồng bộ...</Text>
+          <Text style={styles.syncText}>
+            {syncing ? 'Đang đồng bộ...' : 'Đang tải...'}
+          </Text>
         </View>
       )}
 
@@ -256,17 +314,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    marginTop: Spacing.md,
-    fontSize: FontSizes.md,
+    marginTop: Spacing.sm,
+    fontSize: FontSizes.lg,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingTop: Spacing.xxl * 2,
+    height: 400,
+    paddingTop: Spacing.xxl * 6,
   },
   emptyText: {
-    fontSize: FontSizes.lg,
+    fontSize: FontSizes.xl,
     fontWeight: 'bold',
   },
   listContent: {

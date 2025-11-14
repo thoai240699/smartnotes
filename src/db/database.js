@@ -1,6 +1,6 @@
 // database.js - SQLite Database Configuration
 import * as SQLite from 'expo-sqlite';
-import 'react-native-get-random-values'; 
+import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 // Open database with new API
@@ -44,7 +44,7 @@ export const initDatabase = async () => {
  */
 export const insertNoteToSQLite = async (note) => {
   try {
-    const localId = uuidv4(); 
+    const localId = uuidv4();
     const timestamp = new Date().toISOString();
 
     const noteData = {
@@ -59,7 +59,7 @@ export const insertNoteToSQLite = async (note) => {
       image: note.image || null,
       isCompleted: note.isCompleted ? 1 : 0,
       createdAt: timestamp,
-      updatedAt: timestamp, 
+      updatedAt: timestamp,
       syncStatus: 'pending', // Đánh dấu cần đồng bộ (Pending)
     };
 
@@ -68,9 +68,9 @@ export const insertNoteToSQLite = async (note) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     `;
     const params = [
-      noteData.id, noteData.userId, noteData.title, noteData.content, 
-      noteData.category, noteData.dueDate, noteData.latitude, 
-      noteData.longitude, noteData.image, noteData.isCompleted, 
+      noteData.id, noteData.userId, noteData.title, noteData.content,
+      noteData.category, noteData.dueDate, noteData.latitude,
+      noteData.longitude, noteData.image, noteData.isCompleted,
       noteData.createdAt, noteData.updatedAt, noteData.syncStatus
     ];
 
@@ -92,11 +92,13 @@ export const insertNoteToSQLite = async (note) => {
  */
 export const getAllNotesFromSQLite = async (userId) => {
   try {
-    let sql = `SELECT * FROM ${NOTES_TABLE} WHERE userId = ? OR userId IS NULL ORDER BY updatedAt DESC;`;
-    let params = [userId];
-
-    // Xử lý khi là Guest Mode (chỉ lấy userId IS NULL)
-    if (userId === null || userId === undefined) {
+    let sql = '';
+    let params = [];
+    
+    if (userId) {
+      sql = `SELECT * FROM ${NOTES_TABLE} WHERE userId = ? ORDER BY updatedAt DESC;`;
+      params = [userId];
+    } else {
       sql = `SELECT * FROM ${NOTES_TABLE} WHERE userId IS NULL ORDER BY updatedAt DESC;`;
       params = [];
     }
@@ -104,14 +106,14 @@ export const getAllNotesFromSQLite = async (userId) => {
     const result = await db.getAllAsync(sql, params);
 
     const notes = result.map(note => ({
-        ...note,
-        isCompleted: note.isCompleted === 1,
+      ...note,
+      isCompleted: note.isCompleted === 1,
     }));
-    
+
     return { success: true, notes: notes };
   } catch (error) {
     console.error('❌ Error loading notes from SQLite:', error);
-    return { success: false, error: error.message, notes: [] }; 
+    return { success: false, error: error.message, notes: [] };
   }
 };
 
@@ -123,10 +125,10 @@ export const getAllNotesFromSQLite = async (userId) => {
 export const updateNoteInSQLite = async (note) => {
   try {
     if (!note.id) {
-        throw new Error('Note ID is required for update.');
+      throw new Error('Note ID is required for update.');
     }
     const timestamp = new Date().toISOString();
-    
+
     const sql = `
       UPDATE ${NOTES_TABLE} 
       SET title=?, content=?, category=?, dueDate=?, latitude=?, longitude=?, image=?, isCompleted=?, updatedAt=?, syncStatus='pending' 
@@ -141,21 +143,21 @@ export const updateNoteInSQLite = async (note) => {
       note.longitude || null,
       note.image || null,
       note.isCompleted ? 1 : 0,
-      timestamp, 
+      timestamp,
       note.id,
     ];
 
     await db.runAsync(sql, params);
-    
+
     // Trả về dữ liệu note đã cập nhật để Redux cập nhật state
-    return { 
-        success: true, 
-        note: {
-            ...note, 
-            updatedAt: timestamp, 
-            syncStatus: 'pending',
-            isCompleted: note.isCompleted ? 1 : 0 
-        }
+    return {
+      success: true,
+      note: {
+        ...note,
+        updatedAt: timestamp,
+        syncStatus: 'pending',
+        isCompleted: note.isCompleted ? 1 : 0
+      }
     };
   } catch (error) {
     console.error('❌ Error updating note in SQLite:', error);
@@ -186,13 +188,13 @@ export const markNoteAsDeleted = async (noteId) => {
 export const deleteNoteFromSQLite = async (id) => {
   try {
     const result = await db.runAsync(`DELETE FROM ${NOTES_TABLE} WHERE id = ?;`, [id]);
-    
+
     if (result.changes === 0) {
-        console.warn(`⚠️ Note with id ${noteId} not found for deletion`);
+      console.warn(`⚠️ Note with id ${noteId} not found for deletion`);
     } else {
-        console.log('✅ Note deleted from SQLite:', id);
+      console.log('✅ Note deleted from SQLite:', id);
     }
-    
+
     return { success: true, id: id };
   } catch (error) {
     console.error('❌ Error deleting note from SQLite:', error);
@@ -206,18 +208,18 @@ export const deleteNoteFromSQLite = async (id) => {
  */
 export const getNotesToSync = async () => {
   try {
-    const sql = `SELECT * FROM ${NOTES_TABLE} WHERE syncStatus = 'pending' ORDER BY updatedAt ASC;`;
+    const sql = `SELECT * FROM ${NOTES_TABLE} WHERE syncStatus = 'pending' OR syncStatus = 'deleted-pending' ORDER BY updatedAt ASC;`;
     const result = await db.getAllAsync(sql);
 
     const notes = result.map(note => ({
-        ...note,
-        isCompleted: note.isCompleted === 1,
+      ...note,
+      isCompleted: note.isCompleted === 1,
     }));
 
     return { success: true, notes: notes };
   } catch (error) {
     console.error('❌ Error getting notes to sync:', error);
-    return { success: false, error: error.message, notes: [] }; 
+    return { success: false, error: error.message, notes: [] };
   }
 };
 
@@ -246,40 +248,40 @@ export const updateSyncStatus = async (noteId, newSyncStatus) => {
  */
 export const upsertNoteFromCloud = async (cloudNote) => {
   try {
-    const { 
-        id, userId, title, content, category, dueDate, 
-        latitude, longitude, image, isCompleted, createdAt, 
-        updatedAt 
+    const {
+      id, userId, title, content, category, dueDate,
+      latitude, longitude, image, isCompleted, createdAt,
+      updatedAt
     } = cloudNote;
 
     const existingNote = await db.getFirstAsync(`SELECT updatedAt FROM ${NOTES_TABLE} WHERE id = ?;`, [id]);
-    
+
     if (existingNote) {
-        // Nếu bản ghi tồn tại, so sánh thời gian cập nhật
-        if (new Date(existingNote.updatedAt) >= new Date(updatedAt)) {
-            return { success: true, message: 'Local data is newer/equal, skipped update.' };
-        }
-        const updateSql = `
+      // Nếu bản ghi tồn tại, so sánh thời gian cập nhật
+      if (new Date(existingNote.updatedAt) >= new Date(updatedAt)) {
+        return { success: true, message: 'Local data is newer/equal, skipped update.' };
+      }
+      const updateSql = `
             UPDATE ${NOTES_TABLE} SET userId=?, title=?, content=?, category=?, dueDate=?, latitude=?, longitude=?, image=?, isCompleted=?, updatedAt=?, syncStatus='synced'
             WHERE id=?;
         `;
-        const updateParams = [
-            userId || null, title, content || null, category, dueDate, 
-            latitude, longitude, image, isCompleted ? 1 : 0, updatedAt, id
-        ];
-        await db.runAsync(updateSql, updateParams);
-        
+      const updateParams = [
+        userId || null, title, content || null, category, dueDate,
+        latitude, longitude, image, isCompleted ? 1 : 0, updatedAt, id
+      ];
+      await db.runAsync(updateSql, updateParams);
+
     } else {
-        // Bản ghi chưa tồn tại, THÊM MỚI
-        const insertSql = `
+      // Bản ghi chưa tồn tại, THÊM MỚI
+      const insertSql = `
             INSERT INTO ${NOTES_TABLE} (id, userId, title, content, category, dueDate, latitude, longitude, image, isCompleted, createdAt, updatedAt, syncStatus)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'synced');
         `;
-        const insertParams = [
-            id, userId || null, title, content, category, dueDate, 
-            latitude, longitude, image, isCompleted ? 1 : 0, createdAt, updatedAt
-        ];
-        await db.runAsync(insertSql, insertParams);
+      const insertParams = [
+        id, userId || null, title, content, category, dueDate,
+        latitude, longitude, image, isCompleted ? 1 : 0, createdAt, updatedAt
+      ];
+      await db.runAsync(insertSql, insertParams);
     }
 
     return { success: true, id: id };
@@ -304,7 +306,8 @@ export const updateLocalIdToCloudId = async (localId, cloudId) => {
       WHERE id = ?;
     `;
     // Cập nhật trường ID từ localId thành cloudId
-    await db.runAsync(sql, [cloudId, localId]); 
+    await db.runAsync(sql, [cloudId, localId]);
+    console.log(`✅ Đã cập nhật ID từ ${localId} thành ${cloudId}.`);
     return { success: true };
   } catch (error) {
     console.error(`❌ Error updating ID from ${localId} to ${cloudId}:`, error);
@@ -319,19 +322,44 @@ export const updateLocalIdToCloudId = async (localId, cloudId) => {
  */
 export const cleanLocalDeletedNotes = async (cloudNoteIds, userId) => {
   try {
-    const idList = cloudNoteIds.map(id => `'${id}'`).join(', ');
-    const sql = `
+    let sql = `
       DELETE FROM ${NOTES_TABLE}
-      WHERE userId = ? 
-      AND id NOT IN (${idList.length > 0 ? idList : "''"})
-      AND syncStatus = 'synced'; 
+      WHERE userId = ? AND syncStatus = 'synced'
     `;
+    if (Array.isArray(cloudNoteIds) && cloudNoteIds.length > 0) {
+      const idList = cloudNoteIds.map(id => `'${id}'`).join(', ');
+      sql += ` AND id NOT IN (${idList})`;
+    } else {
+      console.log("Danh sách Cloud Notes rỗng. Xóa tất cả các note 'synced' của user:", userId);
+    }
 
     const result = await db.runAsync(sql, [userId]);
     console.log(`✅ Đã xóa ${result.changes} notes local không còn trên Cloud.`);
     return { success: true };
   } catch (error) {
     console.error('❌ Lỗi Clean Deleted Notes:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Cập nhật userId cho các ghi chú của Guest (userId IS NULL) sang userId của người dùng mới đăng nhập.
+ * Chỉ cập nhật những note có syncStatus là 'pending' hoặc 'synced'.
+ * @param {string} newUserId - ID của người dùng mới đăng nhập.
+ * @returns {Promise<Object>} { success: boolean, error?: string }
+ */
+export const updateGuestNotesToLoggedInUser = async (newUserId) => {
+  try {
+    const sql = `
+      UPDATE ${NOTES_TABLE}
+      SET userId = ?
+      WHERE userId IS NULL AND (syncStatus = 'pending' OR syncStatus = 'synced');
+    `;
+    await db.runAsync(sql, [newUserId]);
+    console.log(`✅ Cập nhật userId thành công cho các note của guest sang ${newUserId}`);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Lỗi cập nhật userId cho note của guest:', error);
     return { success: false, error: error.message };
   }
 };
