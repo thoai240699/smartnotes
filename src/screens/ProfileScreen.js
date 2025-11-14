@@ -11,6 +11,7 @@ import {
   Switch,
   Modal,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../redux/userSlice';
@@ -300,13 +301,20 @@ const ProfileScreen = ({ navigation }) => {
   if (!isLoggedIn || !user) {
     return (
       <ScrollView
-        style={[styles.container, { backgroundColor: themeColors.background }]}
+        style={[styles.container, { 
+          backgroundColor: themeColors.background,
+          paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 0,
+        }]}
       >
+        <StatusBar
+          barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+          backgroundColor={themeColors.background}
+        />
         <View
           style={[styles.profileCard, { backgroundColor: themeColors.card }]}
         >
           <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>👤</Text>
+            <Text style={styles.avatarText}>G</Text>
           </View>
           <Text style={[styles.name, { color: themeColors.text }]}>
             Chế độ khách
@@ -320,18 +328,18 @@ const ProfileScreen = ({ navigation }) => {
           style={[styles.menuContainer, { backgroundColor: themeColors.card }]}
         >
           <TouchableOpacity
-            style={[styles.menuItem, styles.loginButton]}
+            style={[styles.loginButton]}
             onPress={handleLogin}
             testID="login-button"
           >
             <Text style={[styles.menuText, styles.loginText]}>
-              🔐 Đăng nhập / Đăng ký
+              🔐  Đăng nhập / Đăng ký
             </Text>
           </TouchableOpacity>
 
           <View style={[styles.menuItem, styles.settingRow]}>
             <Text style={[styles.menuText, { color: themeColors.text }]}>
-              🌙 Chế độ tối
+              🌙  Chế độ tối
             </Text>
             <Switch
               value={isDarkMode}
@@ -342,7 +350,7 @@ const ProfileScreen = ({ navigation }) => {
 
           <View style={[styles.menuItem, styles.settingRow]}>
             <Text style={[styles.menuText, { color: themeColors.text }]}>
-              🔔 Thông báo
+            🔔  Thông báo
             </Text>
             <Switch
               value={notificationsEnabled}
@@ -352,22 +360,22 @@ const ProfileScreen = ({ navigation }) => {
           </View>
 
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, styles.settingRow]}
             onPress={() => setShowStats(true)}
             testID="stats-button"
           >
             <Text style={[styles.menuText, { color: themeColors.text }]}>
-              📊 Thống kê
+              📊  Thống kê
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.menuItem}
+            style={[styles.menuItem, styles.settingRow, {borderBottomWidth: 0,}]}
             onPress={() => setShowAbout(true)}
             testID="about-button"
           >
             <Text style={[styles.menuText, { color: themeColors.text }]}>
-              ℹ️ Về ứng dụng
+              ℹ️  Về ứng dụng
             </Text>
           </TouchableOpacity>
         </View>
@@ -390,7 +398,10 @@ const ProfileScreen = ({ navigation }) => {
   // Logged In Mode
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: themeColors.background }]}
+      style={[styles.container, { 
+        backgroundColor: themeColors.background,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 0,
+      }]}
     >
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -419,18 +430,18 @@ const ProfileScreen = ({ navigation }) => {
         style={[styles.menuContainer, { backgroundColor: themeColors.card }]}
       >
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, styles.settingRow]}
           onPress={() => navigation.navigate('EditProfile')}
           testID="edit-profile-button"
         >
           <Text style={[styles.menuText, { color: themeColors.text }]}>
-            📝 Chỉnh sửa hồ sơ
+            📝  Chỉnh sửa hồ sơ
           </Text>
         </TouchableOpacity>
 
         <View style={[styles.menuItem, styles.settingRow]}>
           <Text style={[styles.menuText, { color: themeColors.text }]}>
-            🔔 Thông báo
+            🔔  Thông báo
           </Text>
           <Switch
             value={notificationsEnabled}
@@ -441,7 +452,7 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={[styles.menuItem, styles.settingRow]}>
           <Text style={[styles.menuText, { color: themeColors.text }]}>
-            🌙 Chế độ tối
+            🌙  Chế độ tối
           </Text>
           <Switch
             value={isDarkMode}
@@ -451,31 +462,31 @@ const ProfileScreen = ({ navigation }) => {
         </View>
 
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, styles.settingRow]}
           onPress={() => setShowStats(true)}
           testID="stats-button"
         >
           <Text style={[styles.menuText, { color: themeColors.text }]}>
-            📊 Thống kê
+            📊  Thống kê
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, styles.settingRow]}
           onPress={() => setShowAbout(true)}
           testID="about-button"
         >
           <Text style={[styles.menuText, { color: themeColors.text }]}>
-            ℹ️ Về ứng dụng
+            ℹ️  Về ứng dụng
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.menuItem, styles.logoutItem]}
+          style={[styles.menuItem, styles.settingRow, {borderBottomWidth: 0}]}
           onPress={handleLogout}
           testID="logout-button"
         >
-          <Text style={[styles.menuText, styles.logoutText]}>🚪 Đăng xuất</Text>
+          <Text style={[styles.menuText, styles.logoutText]}>💤  Đăng xuất</Text>
         </TouchableOpacity>
       </View>
 
@@ -527,7 +538,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   menuItem: {
-    padding: Spacing.md,
+    minHeight: 50,
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.light.border,
   },
@@ -539,14 +552,13 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: FontSizes.md,
   },
-  logoutItem: {
-    borderBottomWidth: 0,
-  },
+  
   logoutText: {
     color: Colors.error,
     fontWeight: '600',
   },
   loginButton: {
+    padding: Spacing.md,
     backgroundColor: Colors.primary,
     marginBottom: Spacing.md,
     borderRadius: BorderRadius.md,

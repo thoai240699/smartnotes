@@ -1,6 +1,8 @@
 // AuthAPI.js - Authentication API Functions
 import axiosInstance from './axiosInstance';
 
+const USER_RESOURCE = '/users';
+
 /**
  * Login user
  * @param {string} email
@@ -11,7 +13,7 @@ export const loginUser = async (email, password) => {
   try {
     // MockAPI không hỗ trợ authentication thực sự
     // Giải pháp: Lấy tất cả users và tìm user với email/password khớp
-    const response = await axiosInstance.get('/users');
+    const response = await axiosInstance.get(`/users`);
     const users = response.data;
 
     const user = users.find(
@@ -37,7 +39,7 @@ export const loginUser = async (email, password) => {
 export const registerUser = async (userData) => {
   try {
     // Kiểm tra email đã tồn tại chưa
-    const response = await axiosInstance.get('/users');
+    const response = await axiosInstance.get(`/users`);
     const users = response.data;
 
     const existingUser = users.find((u) => u.email === userData.email);
@@ -47,7 +49,7 @@ export const registerUser = async (userData) => {
     }
 
     // Tạo user mới
-    const newUser = await axiosInstance.post('/users', {
+    const newUser = await axiosInstance.post(`/users`, {
       email: userData.email,
       password: userData.password,
       fullname: userData.fullname,
@@ -101,7 +103,7 @@ export const updateUser = async (userId, updateData) => {
 
 export const updatePassword = async ({ id, oldPassword, newPassword }) => {
   try{
-      const response = await axiosInstance.get('/users/${id}');
+      const response = await axiosInstance.get(`/users/${id}`);
       const user = response.data;
       if(user.password !== oldPassword){
           return { success: false, error: 'Mật khẩu cũ không đúng.' };
@@ -112,5 +114,57 @@ export const updatePassword = async ({ id, oldPassword, newPassword }) => {
   } catch (error) {
     console.error('Lỗi khi đổi mật khẩu:', error);
     return { success: false, error: 'Lỗi khi đổi mật khẩu' };
+  }
+};
+
+
+/**
+ * @description Tìm kiếm người dùng theo Email
+ * @param {string} email
+ * @returns {Promise}} - Trả về dữ liệu người dùng 
+ */
+export const findUserByEmail = async (email) => {
+  try {
+    const response = await axiosInstance.get(`/users`, {
+      params: { email: email },
+    });
+    const userList = response.data;
+    const exactMatch = userList.find((user) => user.email === email);
+    if (!exactMatch) {
+      return { success: false, error: 'Email không tồn tại trong hệ thống.' };
+    }
+    return { success: true, user: userList[0] };
+  } catch (error) {
+    if (error.response?.status === 404 && error.response?.data === 'Not found') {
+      return { success: false, error: 'Email không tồn tại trong hệ thống.' };
+    }
+    console.error('Lỗi khi tìm user theo email:', error);
+    return { success: false, error: 'Lỗi kết nối hoặc hệ thống.' };
+  }
+};
+
+
+/**
+ * @description Cập nhật mật khẩu mới sau khi xác thực mã (Bước cuối Quên Mật Khẩu)
+ * @param {string} userId
+ * @param {string} newPassword
+ * @returns {Promise}} - Trả về dữ liệu người dùng đã cập nhật
+ */
+export const resetPassword = async (userId, newPassword) => {
+  try {
+    
+    const getResponse = await axiosInstance.get(`/users/${userId}`);
+    const existingUser = getResponse.data;
+    
+    const updateResponse = await axiosInstance.put(`${USER_RESOURCE}/${userId}`, {
+      ...existingUser,
+      password: newPassword, 
+    });
+    
+    return { success: true, user: updateResponse.data };
+
+  } catch (error) {
+    console.error('Lỗi khi reset mật khẩu:', error);
+    return { success: false, error: 'Lỗi hệ thống khi tạo mật khẩu mới.' };
   }
 };

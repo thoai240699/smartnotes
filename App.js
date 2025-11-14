@@ -1,7 +1,6 @@
 // App.js - Main Application Entry Point
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-//import { createStackNavigator } from '@react-navigation/stack';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Provider, useSelector, useDispatch } from 'react-redux';
@@ -9,8 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { store } from './src/redux/store';
 import { initDatabase } from './src/db/database';
 import { configureNotificationHandler } from './src/utils/notificationHelper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 // Screens
 import SplashScreen from './src/screens/SplashScreen';
@@ -25,6 +25,9 @@ import SearchScreen from './src/screens/SearchScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import NotificationScreen from './src/screens/NotificationScreen';
 import OfflineSyncScreen from './src/screens/OfflineSyncScreen';
+import ForgotEmailScreen from './src/screens/ForgotEmailScreen';
+import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
+import VerifyCodeScreen from './src/screens/VerifyCodeScreen';
 
 import { Colors } from './src/styles/globalStyles';
 
@@ -36,6 +39,7 @@ const RootStack = createNativeStackNavigator();
 function MainTabs() {
   const { isDarkMode } = useTheme();
   const themeColors = isDarkMode ? Colors.dark : Colors.light;
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -44,12 +48,15 @@ function MainTabs() {
         tabBarInactiveTintColor: themeColors.textSecondary,
         headerShown: false,
         tabBarStyle: {
-          paddingBottom: 5,
+          paddingBottom: insets.bottom + 5,
           paddingTop: 5,
-          height: 60,
+          height: 55 + insets.bottom,
           backgroundColor: themeColors.card,
           borderTopColor: themeColors.border,
         },
+        tabBarLabelStyle: {
+          fontSize: 12,
+        }
       }}
     >
       <Tab.Screen
@@ -60,7 +67,7 @@ function MainTabs() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'document-text' : 'document-text-outline'}
-              size={24}
+              size={26}
               color={color}
             />
           ),
@@ -74,7 +81,7 @@ function MainTabs() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'search' : 'search-outline'}
-              size={24}
+              size={26}
               color={color}
             />
           ),
@@ -88,7 +95,7 @@ function MainTabs() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'notifications' : 'notifications-outline'}
-              size={24}
+              size={26}
               color={color}
             />
           ),
@@ -102,7 +109,7 @@ function MainTabs() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'person' : 'person-outline'}
-              size={24}
+              size={26}
               color={color}
             />
           ),
@@ -168,6 +175,21 @@ function AppStack() {
         component={RegisterScreen}
         options={{ headerShown: false }}
       />
+      <Stack.Screen
+        name="ForgotEmail"
+        component={ForgotEmailScreen}
+        options={{ title: 'Quên Mật Khẩu' }}
+      />
+      <Stack.Screen
+        name="VerifyCode"
+        component={VerifyCodeScreen}
+        options={{ title: 'Xác thực Mã' }}
+      />
+      <Stack.Screen
+        name="ResetPassword"
+        component={ResetPasswordScreen}
+        options={{ title: 'Tạo Mật Khẩu Mới' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -176,7 +198,8 @@ function AppStack() {
 function RootNavigator() {
   //const isSplashLoading = useSelector((state) => state.app.isLoading);
   const dispatch = useDispatch();
-  const [navigationRef, setNavigationRef] = useState(null);
+  //const [navigationRef, setNavigationRef] = useState(null);
+  const navigationRef = useRef(null); 
 
   useEffect(() => {
     // Initialize app
@@ -220,12 +243,13 @@ function RootNavigator() {
 
   // Handle notification tap navigation
   const handleNotificationTap = (data) => {
-    if (!navigationRef) return;
+    // if (!navigationRef) return;
+    if (!navigationRef.current) return; 
 
     try {
       if (data.type === 'note_reminder' && data.noteId) {
         // Navigate to the specific note
-        navigationRef.navigate('MainApp', {
+        navigationRef.current?.navigate('MainApp', {
           screen: 'Main',
           params: {
             screen: 'HomeTab',
@@ -234,7 +258,7 @@ function RootNavigator() {
 
         // Then navigate to note detail after a short delay
         setTimeout(() => {
-          navigationRef.navigate('NoteDetail', { noteId: data.noteId });
+          navigationRef.current?.navigate('NoteDetail', { noteId: data.noteId });
         }, 500);
       }
     } catch (error) {
@@ -249,7 +273,7 @@ function RootNavigator() {
   // Always start with AppStack (Main tabs), now alway start with SplashScreen
   // Login/Register accessible from Profile tab
   return (
-    <NavigationContainer ref={setNavigationRef}>
+    <NavigationContainer ref={navigationRef}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
         <RootStack.Screen name="Splash" component={SplashScreen} />
         <RootStack.Screen name="MainApp" component={AppStack} />

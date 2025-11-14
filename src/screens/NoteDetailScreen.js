@@ -1,7 +1,7 @@
 // NoteDetailScreen.js - Màn hình chi tiết ghi chú
 // TODO: Person B - Display full note details
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,8 +10,11 @@ import {
   Image,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteNoteAsync, updateNoteAsync } from '../redux/noteSlice';
 import {
   Colors,
@@ -21,12 +24,28 @@ import {
 } from '../styles/globalStyles';
 import { formatDateTime } from '../utils/dateHelper';
 
-const NoteDetailScreen = ({ route, navigation }) => {
+const NoteDetailScreen = ({ navigation }) => {
+  const route = useRoute();
   const dispatch = useDispatch();
-  const { note } = route.params;
+  const { noteId } = route.params;
+  const note = useSelector(state =>
+    state.note.notes.find(n => n.id === noteId)
+  );
+
+  const loading = useSelector(state => state.note.loading);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!note) {
+        navigation.goBack();
+      }
+    }, [note, navigation])
+  );
+
+
 
   const handleDelete = () => {
-    Alert.alert('Xóa ghi chú', 'Bạn có chắc chắn muốn xóa ghi chú này?', [
+    Alert.alert('Xóa ghi chú', 'Bạn có chắc chắn muốn xóa ghi chú này? Nó sẽ bị xóa cả trên Cloud nếu đã đồng bộ.', [
       { text: 'Hủy', style: 'cancel' },
       {
         text: 'Xóa',
@@ -34,45 +53,78 @@ const NoteDetailScreen = ({ route, navigation }) => {
         onPress: async () => {
           try {
             await dispatch(deleteNoteAsync(note.id)).unwrap();
-            navigation.goBack();
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('Main'); 
+            }
           } catch (error) {
-            Alert.alert('Lỗi', 'Không thể xóa ghi chú');
+            Alert.alert('Lỗi', 'Không thể xóa ghi chú: ' + (typeof error === 'string' ? error : 'Lỗi hệ thống.'));
           }
         },
       },
     ]);
   };
 
-  const handleEdit = () => {
-    navigation.navigate('EditNote', { note });
-  };
-
   const toggleComplete = async () => {
     try {
-      await dispatch(
-        updateNoteAsync({
-          id: note.id,
-          noteData: { ...note, isCompleted: !note.isCompleted },
-        })
-      ).unwrap();
+      const payload = { ...note, isCompleted: !note.isCompleted };
+      await dispatch(updateNoteAsync(payload)).unwrap();
+
+      const statusText = payload.isCompleted ? 'Hoàn thành' : 'Chưa hoàn thành';
+      Alert.alert('Thành công', `Trạng thái đã được cập nhật thành ${statusText}.`);
     } catch (error) {
       Alert.alert('Lỗi', 'Không thể cập nhật trạng thái');
     }
   };
 
+  const handleEdit = () => {
+    navigation.navigate('EditNote', { noteId: note.id });
+  };
+
+  React.useLayoutEffect(() => { // Cấu hình nút Edit trên Header
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={handleEdit} disabled={loading}>
+          <Ionicons name="create-outline" size={24} color="#FFFFFF" style={{ marginRight: Spacing.md }} />
+        </TouchableOpacity>
+      ),
+      headerTitle: note?.title?.length > 20 ? 'Chi tiết ghi chú' : note?.title
+    });
+  }, [navigation, note, loading]);
+
+  // Thông tin vị trí cho MapView
+
+
+  if (!note) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.errorText}>Đang tải hoặc ghi chú đã bị xóa.</Text>
+      </View>
+    );
+  }
+
+  const hasLocation = note.latitude && note.longitude;
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.title}>{note.title}</Text>
+
+        {/* Title & Status */}
+        <Text style={[styles.title, note.isCompleted && styles.completedTitle]}>
+          {note.title}
+        </Text>
 
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryText}>{note.category || 'other'}</Text>
+          <Text style={styles.categoryText}>{(note.category || 'other').toString()}</Text>
         </View>
 
         {note.content && <Text style={styles.contentText}>{note.content}</Text>}
 
+        {/* Image */}
         {note.image && (
-          <Image source={{ uri: note.image }} style={styles.image} />
+          <Image source={{ uri: note.image }} style={styles.image} resizeMode="cover" />
         )}
 
         {note.latitude && note.longitude && (
@@ -89,58 +141,77 @@ const NoteDetailScreen = ({ route, navigation }) => {
           </View>
         )}
 
+        {/* Info Rows */}
         {note.dueDate && (
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Nhắc nhở:</Text>
-            <Text style={styles.infoValue}>{formatDateTime(note.dueDate)}</Text>
+            <Text style={styles.infoValue}>{formatDateTime(note.dueDate) || 'N/A'}</Text>
           </View>
         )}
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Tạo lúc:</Text>
-          <Text style={styles.infoValue}>{formatDateTime(note.createdAt)}</Text>
+          <Text style={styles.infoValue}>{formatDateTime(note.createdAt) || 'N/A'}</Text>
         </View>
 
+        {/* Sync Status */}
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Đồng bộ:</Text>
+          <Text style={[styles.infoValue, note.syncStatus === 'pending' && styles.pendingSyncText]}>
+            {note.syncStatus === 'pending' ? 'Pending Sync ☁️' : 'Đã đồng bộ ✅'}
+          </Text>
+        </View>
+
+
         {/* Action Buttons */}
-        <View style={styles.buttonRow}>
+        <View style={[styles.buttonRow, { marginTop: Spacing.xl }]}>
           <TouchableOpacity
             style={[
               styles.button,
               {
                 backgroundColor: note.isCompleted
-                  ? Colors.warning
+                  ? Colors.warning // Màu khác khi đã hoàn thành (nhấn để hoàn tác)
                   : Colors.success,
               },
             ]}
             onPress={toggleComplete}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {note.isCompleted ? '↻ Chưa hoàn thành' : '✓ Hoàn thành'}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {note.isCompleted ? '↻ CHƯA HOÀN THÀNH' : '✓ HOÀN THÀNH'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: Colors.primary }]}
-            onPress={handleEdit}
-          >
-            <Text style={styles.buttonText}>✎ Chỉnh sửa</Text>
-          </TouchableOpacity>
-
+        <View style={[styles.buttonRow, { marginBottom: Spacing.xxl }]}>
           <TouchableOpacity
             style={[styles.button, { backgroundColor: Colors.error }]}
             onPress={handleDelete}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>🗑 Xóa</Text>
+            <Text style={styles.buttonText}>🗑 XÓA GHI CHÚ</Text>
           </TouchableOpacity>
         </View>
+
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: FontSizes.lg
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.light.background,
@@ -152,6 +223,11 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.xxl,
     fontWeight: 'bold',
     marginBottom: Spacing.md,
+    color: Colors.light.text,
+  },
+  completedTitle: {
+    textDecorationLine: 'line-through',
+    color: Colors.light.textSecondary
   },
   categoryBadge: {
     alignSelf: 'flex-start',
@@ -165,11 +241,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: '600',
     textTransform: 'capitalize',
+    fontSize: FontSizes.sm
   },
   contentText: {
     fontSize: FontSizes.md,
     lineHeight: 24,
     marginBottom: Spacing.md,
+    color: Colors.light.text
   },
   image: {
     width: '100%',
@@ -184,6 +262,7 @@ const styles = StyleSheet.create({
     fontSize: FontSizes.lg,
     fontWeight: '600',
     marginBottom: Spacing.sm,
+    color: Colors.light.text
   },
   locationBox: {
     backgroundColor: Colors.primary + '10',
@@ -200,15 +279,21 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     marginBottom: Spacing.sm,
+    alignItems: 'center'
   },
   infoLabel: {
     fontSize: FontSizes.md,
     fontWeight: '600',
     marginRight: Spacing.sm,
+    color: Colors.light.text
   },
   infoValue: {
     fontSize: FontSizes.md,
     color: Colors.light.textSecondary,
+  },
+  pendingSyncText: {
+    color: Colors.warning,
+    fontWeight: '600'
   },
   buttonRow: {
     flexDirection: 'row',
@@ -220,6 +305,9 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
+  },
+  actionButton: {
+    paddingVertical: Spacing.md,
   },
   buttonText: {
     color: '#FFFFFF',

@@ -46,18 +46,18 @@ const SearchScreen = ({ navigation }) => {
       results = results.filter((note) => note.category === selectedCategory);
     }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
+    // Filter by search query (guard against null title/content)
+    if ((searchQuery ?? '').trim()) {
+      const query = (searchQuery ?? '').toLowerCase().trim();
       results = results.filter(
         (note) =>
-          note.title.toLowerCase().includes(query) ||
-          note.content.toLowerCase().includes(query)
+          (note.title ?? '').toLowerCase().includes(query) ||
+          (note.content ?? '').toLowerCase().includes(query)
       );
     }
 
-    // Sort by newest first
-    return results.sort(
+    // Sort by newest first (create a shallow copy so we don't mutate Redux state)
+    return [...results].sort(
       (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
     );
   }, [notes, searchQuery, selectedCategory]);

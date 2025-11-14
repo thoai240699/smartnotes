@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
-  SafeAreaView,
   StatusBar,
+  Platform,
   ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -316,8 +316,9 @@ const NotificationScreen = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: themeColors.background }]}
+    <View
+      style={[styles.container, { 
+        backgroundColor: themeColors.background }]}
     >
       <StatusBar
         barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -382,7 +383,7 @@ const NotificationScreen = ({ navigation }) => {
           />
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -390,6 +391,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F8FAFC',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 0,
   },
   centerContent: {
     justifyContent: 'center',

@@ -9,6 +9,11 @@ import {
   BorderRadius,
 } from '../styles/globalStyles';
 
+const INITIAL_DELTA = {
+  latitudeDelta: 0.01,
+  longitudeDelta: 0.01,
+};
+
 const MapPicker = ({ initialLocation, onLocationSelect, theme = 'light' }) => {
   const isDark = theme === 'dark';
   const themeColors = isDark ? Colors.dark : Colors.light;
@@ -100,6 +105,15 @@ const styles = StyleSheet.create({
     height: 300,
     borderRadius: BorderRadius.lg,
     overflow: 'hidden',
+    marginBottom: Spacing.md,
+    position: 'relative',
+  },
+  mapWrapper: {
+    flex: 1,
+    height: 250,
+    borderRadius: BorderRadius.md,
+    overflow: 'hidden',
+    position: 'relative',
   },
   mockMap: {
     flex: 1,
@@ -140,8 +154,25 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FontSizes.sm,
-    marginBottom: Spacing.xs,
   },
+  removeButton: {
+    padding: Spacing.xs,
+  },
+  hintBox: {
+    position: 'absolute',
+    bottom: Spacing.md,
+    left: Spacing.md,
+    right: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
+    alignItems: 'center',
+    shadowColor: '#000',
+    elevation: 5,
+  },
+  hintText: {
+    fontSize: FontSizes.sm,
+    fontWeight: '500',
+  }
 });
 
 export default MapPicker;

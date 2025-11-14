@@ -1,7 +1,6 @@
 // axiosInstance.js - Axios Configuration
 import axios from 'axios';
 
-// TODO: Thay đổi BASE_URL thành URL MockAPI của bạn
 const BASE_URL = 'https://6900eeecff8d792314bc0f7f.mockapi.io/api/v1';
 
 const axiosInstance = axios.create({
