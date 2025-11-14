@@ -12,6 +12,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { deleteNoteAsync, updateNoteAsync } from '../redux/noteSlice';
 import {

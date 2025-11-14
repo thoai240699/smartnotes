@@ -5,8 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f20a0633-949a-4943-99ed-4105dc6d9e0c" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/babel.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/babel.config.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/MapPicker.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/MapPicker.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/api/NoteAPI.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/api/NoteAPI.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/redux/noteSlice.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/redux/noteSlice.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/AddNoteScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/AddNoteScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/NoteDetailScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/NoteDetailScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/screens/SearchScreen.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/screens/SearchScreen.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/utils/mapHelper.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/utils/mapHelper.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

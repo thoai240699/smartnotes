@@ -140,10 +140,11 @@ export const searchNotes = async (userId, keyword) => {
 
     if (!keyword) return notes;
 
+    const lowerKeyword = (keyword ?? '').toLowerCase();
     return notes.filter(
       (note) =>
-        note.title.toLowerCase().includes(keyword.toLowerCase()) ||
-        note.content.toLowerCase().includes(keyword.toLowerCase())
+        (note.title ?? '').toLowerCase().includes(lowerKeyword) ||
+        (note.content ?? '').toLowerCase().includes(lowerKeyword)
     );
   } catch (error) {
     throw error;

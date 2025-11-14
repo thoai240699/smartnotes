@@ -252,11 +252,11 @@ const applyFilters = (state) => {
 
   // 2. Áp dụng Lọc theo Tìm kiếm
   if (state.searchQuery) {
-    const query = state.searchQuery.toLowerCase();
+    const query = (state.searchQuery ?? '').toLowerCase();
     filtered = filtered.filter(
       (note) =>
-        note.title?.toLowerCase().includes(query) ||
-        note.content?.toLowerCase().includes(query)
+        (note.title ?? '').toLowerCase().includes(query) ||
+        (note.content ?? '').toLowerCase().includes(query)
     );
   }
 
